@@ -10,6 +10,7 @@ export const Hero: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -21,6 +22,17 @@ export const Hero: React.FC = () => {
     };
     loadHero();
   }, []);
+
+  useEffect(() => {
+    if (playerRef.current && playerRef.current.mute && playerRef.current.unMute) {
+      if (isMuted) {
+        playerRef.current.mute();
+      } else {
+        playerRef.current.unMute();
+        playerRef.current.setVolume(100);
+      }
+    }
+  }, [isMuted]);
 
   useEffect(() => {
     const ensureYouTubeAPI = () =>
@@ -54,12 +66,12 @@ export const Hero: React.FC = () => {
         videoId: movie.youtubeId,
         playerVars: {
           autoplay: 1,
-          mute: 1,
+          mute: 1, // Start muted strictly for browser policy
           playsinline: 1,
           controls: 0,
           rel: 0,
           loop: 1,
-          playlist: movie.youtubeId,
+          playlist: movie.youtubeId, // Required for loop
           modestbranding: 1,
           iv_load_policy: 3,
           start: 10,
@@ -68,8 +80,7 @@ export const Hero: React.FC = () => {
         events: {
           onReady: (e: any) => {
             try {
-              e.target.mute(); // Ensure muted
-              e.target.setVolume(0); // Set volume to 0
+              e.target.mute();
             } catch { }
             try { e.target.playVideo(); } catch { }
             setMaxQuality(e.target);
@@ -115,8 +126,6 @@ export const Hero: React.FC = () => {
         />
       </div>
 
-      {/* Video Player - Disabled for now */}
-
       <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none">
         <div ref={containerRef} className={`w-full h-full opacity-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : ''}`} />
       </div>
@@ -132,6 +141,20 @@ export const Hero: React.FC = () => {
       {/* Vignette Overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90"></div>
+
+      {/* Manual Mute Toggle (Always visible if video loaded) */}
+      {videoLoaded && (
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="absolute bottom-[25%] right-8 z-30 border border-white/30 rounded-full p-3 bg-black/20 hover:bg-white/10 transition backdrop-blur-sm hidden md:flex items-center justify-center"
+        >
+          {isMuted ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          )}
+        </button>
+      )}
 
       {/* Content */}
       <div className="absolute top-[25%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10 w-full pr-4">

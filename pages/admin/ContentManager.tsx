@@ -1,51 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
-import { Content } from '../../types';
+import { Content, Section } from '../../types';
 import { Pencil, Trash2, Plus, X } from 'lucide-react';
 
 export const ContentManager: React.FC = () => {
   const [contents, setContents] = useState<Content[]>([]);
+  const [sections, setSections] = useState<Section[]>([]); // Curated sections
+  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, setValue } = useForm<Content>();
 
-  const fetchContent = async () => {
-    const q = query(collection(db, 'content'), orderBy('createdAt', 'desc'));
-    const snap = await getDocs(q);
-    setContents(snap.docs.map(d => ({ id: d.id, ...d.data() } as Content)));
+  const fetchData = async () => {
+    // Fetch Content
+    const qContent = query(collection(db, 'content'), orderBy('createdAt', 'desc'));
+    const snapContent = await getDocs(qContent);
+    setContents(snapContent.docs.map(d => ({ id: d.id, ...d.data() } as Content)));
+
+    // Fetch Curated Sections
+    const qSections = query(collection(db, 'sections'), where('type', '==', 'curated'));
+    const snapSections = await getDocs(qSections);
+    setSections(snapSections.docs.map(d => ({ id: d.id, ...d.data() } as Section)));
   };
 
-  useEffect(() => { fetchContent(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const onSubmit = async (data: Content) => {
     try {
-      // Process genres string to array if needed (simplified for this demo)
       const formattedData = {
         ...data,
-        // Convert comma-separated string to array if user typed it manually
         genres: typeof data.genres === 'string' ? (data.genres as string).split(',').map((g: string) => g.trim()) : data.genres,
         cast: typeof data.cast === 'string' ? (data.cast as string).split(',').map((c: string) => c.trim()) : data.cast || [],
         tags: typeof data.tags === 'string' ? (data.tags as string).split(',').map((t: string) => t.trim()) : data.tags || [],
         vote_average: Number(data.vote_average)
       };
 
+      let contentId = editingId;
+
       if (editingId) {
         await updateDoc(doc(db, 'content', editingId), formattedData);
       } else {
-        await addDoc(collection(db, 'content'), {
+        const docRef = await addDoc(collection(db, 'content'), {
           ...formattedData,
           createdAt: new Date().toISOString()
         });
+        contentId = docRef.id;
       }
+
+      // Update Sections Logic
+      if (contentId) {
+        // Find which sections need updates
+        const updatePromises = sections.map(async (section) => {
+          const isSelected = selectedSectionIds.includes(section.id);
+          const currentlyHasContent = section.contentIds?.includes(contentId!) || false;
+
+          if (isSelected && !currentlyHasContent) {
+            // Add to section
+            await updateDoc(doc(db, 'sections', section.id), {
+              contentIds: arrayUnion(contentId)
+            });
+          } else if (!isSelected && currentlyHasContent) {
+            // Remove from section
+            await updateDoc(doc(db, 'sections', section.id), {
+              contentIds: arrayRemove(contentId)
+            });
+          }
+        });
+        await Promise.all(updatePromises);
+      }
+
       setIsEditing(false);
       setEditingId(null);
       reset();
-      fetchContent();
-    } catch (e) {
+      fetchData(); // Refresh both content and sections data
+    } catch (e: any) {
       alert("Error saving content: " + e.message);
     }
   };
@@ -53,7 +85,7 @@ export const ContentManager: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this content?")) {
       await deleteDoc(doc(db, 'content', id));
-      fetchContent();
+      fetchData();
     }
   };
 
@@ -70,7 +102,18 @@ export const ContentManager: React.FC = () => {
     setValue('tags', content.tags);
     setValue('vote_average', content.vote_average);
     setValue('release_date', content.release_date);
+
+    // Determine which curated sections this content is currently in
+    const currentSections = sections.filter(s => s.contentIds?.includes(content.id)).map(s => s.id);
+    setSelectedSectionIds(currentSections);
+
     setIsEditing(true);
+  };
+
+  const handleSectionToggle = (sectionId: string) => {
+    setSelectedSectionIds(prev =>
+      prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]
+    );
   };
 
   return (
@@ -78,7 +121,7 @@ export const ContentManager: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-gray-400">Manage Movies & TV Shows</h2>
         <button
-          onClick={() => { reset(); setEditingId(null); setIsEditing(true); }}
+          onClick={() => { reset(); setEditingId(null); setSelectedSectionIds([]); setIsEditing(true); }}
           className="bg-[#e50914] text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-red-700 transition"
         >
           <Plus size={18} /> Add New
@@ -142,6 +185,27 @@ export const ContentManager: React.FC = () => {
                 <label className="block text-sm text-gray-400 mb-1">Genres (comma separated)</label>
                 <input {...register('genres')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="Action, Sci-Fi" />
               </div>
+
+              {/* Sections Selector */}
+              {sections.length > 0 && (
+                <div className="bg-[#2a2a2a] p-4 rounded border border-gray-700">
+                  <label className="block text-sm text-gray-400 mb-2 font-bold">Add to Curated Sections</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    {sections.map(section => (
+                      <div key={section.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`sec-${section.id}`}
+                          checked={selectedSectionIds.includes(section.id)}
+                          onChange={() => handleSectionToggle(section.id)}
+                          className="accent-[#e50914]"
+                        />
+                        <label htmlFor={`sec-${section.id}`} className="text-sm cursor-pointer select-none">{section.title}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Cast (comma separated)</label>

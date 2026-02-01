@@ -63,7 +63,8 @@ export const Hero: React.FC = () => {
           modestbranding: 1,
           iv_load_policy: 3,
           start: 10,
-          origin: window.location.origin
+          origin: window.location.origin,
+          enablejsapi: 1
         },
         events: {
           onReady: (e: any) => {
@@ -71,7 +72,25 @@ export const Hero: React.FC = () => {
               e.target.mute(); // Ensure muted
               e.target.setVolume(0); // Set volume to 0
             } catch { }
-            try { e.target.playVideo(); } catch { }
+
+            // Retry playback multiple times to ensure it starts
+            const attemptPlay = (attempts = 0) => {
+              if (attempts > 5) return;
+              try {
+                e.target.playVideo();
+                setTimeout(() => {
+                  const state = e.target.getPlayerState();
+                  // If not playing (state 1), retry
+                  if (state !== 1) {
+                    attemptPlay(attempts + 1);
+                  }
+                }, 500);
+              } catch {
+                setTimeout(() => attemptPlay(attempts + 1), 500);
+              }
+            };
+
+            attemptPlay();
             setMaxQuality(e.target);
           },
           onStateChange: (ev: any) => {

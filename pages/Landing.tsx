@@ -186,7 +186,7 @@ export const Landing: React.FC = () => {
     <div className="relative min-h-screen w-full bg-black overflow-x-hidden">
       {/* Hero Background */}
       <div className="absolute inset-0 opacity-50 h-[700px]">
-        <img src="/background.jpg" className="w-full h-full object-cover" alt="Background" />
+        <img src="https://res.cloudinary.com/dpba1gvra/image/upload/v1769948810/background_avf03e.jpg" className="w-full h-full object-cover" alt="Background" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60"></div>
       </div>
 

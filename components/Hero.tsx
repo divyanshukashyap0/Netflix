@@ -65,7 +65,8 @@ export const Hero: React.FC = () => {
           iv_load_policy: 3,
           enablejsapi: 1,
           disablekb: 1,
-          fs: 0
+          fs: 0,
+          origin: window.location.origin // Fixes postMessage warning
         },
         events: {
           onReady: (e: any) => {

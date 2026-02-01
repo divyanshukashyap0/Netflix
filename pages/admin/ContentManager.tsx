@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query, where, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { Content, Section } from '../../types';
-import { Pencil, Trash2, Plus, X } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Star } from 'lucide-react';
 
 export const ContentManager: React.FC = () => {
   const [contents, setContents] = useState<Content[]>([]);
@@ -12,6 +12,7 @@ export const ContentManager: React.FC = () => {
   const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [heroContentId, setHeroContentId] = useState<string>('');
 
   const { register, handleSubmit, reset, setValue } = useForm<Content>();
 
@@ -25,9 +26,29 @@ export const ContentManager: React.FC = () => {
     const qSections = query(collection(db, 'sections'), where('type', '==', 'curated'));
     const snapSections = await getDocs(qSections);
     setSections(snapSections.docs.map(d => ({ id: d.id, ...d.data() } as Section)));
+
+    // Fetch Hero Settings
+    try {
+      const settingsSnap = await getDoc(doc(db, 'settings', 'global'));
+      if (settingsSnap.exists()) {
+        setHeroContentId(settingsSnap.data().heroContentId || '');
+      }
+    } catch (e) { console.error("Error fetching settings", e); }
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const handleSetHero = async (contentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Toggle off if already selected, or switch to new one
+      const newId = heroContentId === contentId ? '' : contentId;
+      await setDoc(doc(db, 'settings', 'global'), { heroContentId: newId }, { merge: true });
+      setHeroContentId(newId);
+    } catch (e) {
+      alert('Failed to update Hero content');
+    }
+  };
 
   const onSubmit = async (data: Content) => {
     try {
@@ -243,6 +264,13 @@ export const ContentManager: React.FC = () => {
                 onClick={() => startEdit(c)}
               >
                 <td className="p-4 font-medium flex items-center gap-3">
+                  <button
+                    onClick={(e) => handleSetHero(c.id, e)}
+                    className={`p-1 rounded ${heroContentId === c.id ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400/50'}`}
+                    title="Set as Homepage Hero"
+                  >
+                    <Star size={18} fill={heroContentId === c.id ? "currentColor" : "none"} />
+                  </button>
                   <img src={c.poster_path} className="w-8 h-12 object-cover rounded bg-gray-700" alt="" />
                   {c.title}
                 </td>

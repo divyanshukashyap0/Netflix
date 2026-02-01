@@ -116,7 +116,7 @@ export const Hero: React.FC = () => {
       </div>
 
       {/* Video Player - Disabled for now */}
-      {/*
+
       <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none">
         <div ref={containerRef} className={`w-full h-full opacity-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : ''}`} />
       </div>
@@ -128,7 +128,6 @@ export const Hero: React.FC = () => {
           className="w-full h-full object-cover"
         />
       </div>
-      */}
 
       {/* Vignette Overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>

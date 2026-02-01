@@ -128,8 +128,22 @@ export const Hero: React.FC = () => {
 
       {/* Video Player - Above backdrop, below content */}
       <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none z-[1]">
-        <div ref={containerRef} className={`w-full h-full transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`} />
+        <div
+          ref={containerRef}
+          id="hero-yt-player"
+          className={`w-full h-full transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
       </div>
+      <style>{`
+        #hero-yt-player iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      `}</style>
 
       {/* Vignette Overlays - Above video */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90 z-[2]"></div>

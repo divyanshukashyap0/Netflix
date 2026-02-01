@@ -104,7 +104,9 @@ export enum AppRoute {
   CONTACT = '/contact',
   SPEED_TEST = '/speed-test',
   LEGAL = '/legal',
-  ORIGINALS = '/originals'
+  ORIGINALS = '/originals',
+  AUDIO_DESCRIPTION = '/audio-description',
+  GIFT_CARDS = '/gift-cards'
 }
 
 export interface TMDBResponse {

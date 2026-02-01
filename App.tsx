@@ -62,7 +62,7 @@ const Router: React.FC = () => {
     AppRoute.FAQ, AppRoute.HELP, AppRoute.MEDIA, AppRoute.INVESTORS,
     AppRoute.JOBS, AppRoute.WAYS_TO_WATCH, AppRoute.TERMS, AppRoute.PRIVACY,
     AppRoute.COOKIES, AppRoute.CORPORATE, AppRoute.CONTACT, AppRoute.SPEED_TEST,
-    AppRoute.LEGAL, AppRoute.ORIGINALS
+    AppRoute.LEGAL, AppRoute.ORIGINALS, AppRoute.AUDIO_DESCRIPTION, AppRoute.GIFT_CARDS
   ];
 
   if (infoRoutes.some(route => currentHash === `#${route}`)) {
@@ -73,11 +73,11 @@ const Router: React.FC = () => {
   if (!user) {
     return <Landing />;
   }
-  
+
   // Logged In but Inactive Subscription (User flow)
   if (user && user.subscriptionStatus !== 'active' && user.role !== 'admin') {
-      // Landing page handles the 'plans' step logic via internal useEffect
-      return <Landing />;
+    // Landing page handles the 'plans' step logic via internal useEffect
+    return <Landing />;
   }
 
   // Logged In, but No Profile Selected

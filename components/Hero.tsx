@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Movie } from '../types';
 import { Modal } from './Modal';
-import { getHeroContent } from '../services/contentService';
+import { getHeroContent, getSiteSettings } from '../services/contentService';
 import { Info, Play } from 'lucide-react';
 
 export const Hero: React.FC = () => {
@@ -10,12 +10,19 @@ export const Hero: React.FC = () => {
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoQuality, setVideoQuality] = useState<string>('hd1080');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const loadHero = async () => {
       const heroContent = await getHeroContent();
       if (heroContent) setMovie(heroContent);
+
+      // Fetch quality setting
+      const settings = await getSiteSettings();
+      if (settings.heroVideoQuality) {
+        setVideoQuality(settings.heroVideoQuality);
+      }
     };
     loadHero();
   }, []);
@@ -41,8 +48,10 @@ export const Hero: React.FC = () => {
 
   if (!movie) return <div className="h-[70vh] md:h-[56.25vw] bg-[#141414] animate-pulse flex items-center justify-center text-gray-700">Loading Preview...</div>;
 
+  // Build YouTube embed URL with quality parameter
+  const qualityParam = videoQuality !== 'auto' ? `&vq=${videoQuality}` : '';
   const youtubeEmbedUrl = movie.youtubeId
-    ? `https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${movie.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=10&enablejsapi=1&origin=${window.location.origin}`
+    ? `https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${movie.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=10&enablejsapi=1&origin=${window.location.origin}${qualityParam}`
     : null;
 
   return (

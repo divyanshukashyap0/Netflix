@@ -35,6 +35,7 @@ export interface Section {
 export interface SiteSettings {
   siteName: string;
   heroContentId?: string; // ID of the content to show in Hero
+  heroVideoQuality?: 'auto' | 'hd720' | 'hd1080' | 'highres'; // YouTube quality preference
   maintenanceMode: boolean;
   contactEmail?: string;
 }

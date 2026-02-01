@@ -6,7 +6,7 @@ import { SiteSettings } from '../../types';
 import { Save, Database, AlertTriangle, Settings } from 'lucide-react';
 
 export const SettingsManager: React.FC = () => {
-    const [settings, setSettings] = useState<SiteSettings>({ siteName: '', maintenanceMode: false, heroContentId: '' });
+    const [settings, setSettings] = useState<SiteSettings>({ siteName: '', maintenanceMode: false, heroContentId: '', heroVideoQuality: 'hd1080' });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -45,6 +45,20 @@ export const SettingsManager: React.FC = () => {
                                 className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none"
                                 placeholder="Paste a Content ID from the Content tab"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-gray-400 mb-1">Hero Video Quality</label>
+                            <select
+                                value={settings.heroVideoQuality || 'hd1080'}
+                                onChange={e => setSettings({ ...settings, heroVideoQuality: e.target.value as any })}
+                                className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none"
+                            >
+                                <option value="highres">4K / Highest Available</option>
+                                <option value="hd1080">1080p (Full HD)</option>
+                                <option value="hd720">720p (HD)</option>
+                                <option value="auto">Auto (Let YouTube Decide)</option>
+                            </select>
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">

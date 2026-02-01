@@ -200,7 +200,9 @@ export const ContentManager: React.FC = () => {
                           onChange={() => handleSectionToggle(section.id)}
                           className="accent-[#e50914]"
                         />
-                        <label htmlFor={`sec-${section.id}`} className="text-sm cursor-pointer select-none">{section.title}</label>
+                        <label htmlFor={`sec-${section.id}`} className="text-sm cursor-pointer select-none">
+                          {section.title} <span className="text-xs text-gray-500 uppercase">[{section.scope || 'home'}]</span>
+                        </label>
                       </div>
                     ))}
                   </div>

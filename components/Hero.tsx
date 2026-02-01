@@ -10,7 +10,6 @@ export const Hero: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const [showPlayButton, setShowPlayButton] = useState(false);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +53,7 @@ export const Hero: React.FC = () => {
       playerRef.current = new YT.Player(containerRef.current, {
         videoId: movie.youtubeId,
         playerVars: {
-          autoplay: 0, // Disable autoplay
+          autoplay: 1,
           mute: 1,
           playsinline: 1,
           controls: 0,
@@ -63,31 +62,28 @@ export const Hero: React.FC = () => {
           playlist: movie.youtubeId,
           modestbranding: 1,
           iv_load_policy: 3,
-          enablejsapi: 1,
-          disablekb: 1,
-          fs: 0,
-          origin: window.location.origin // Fixes postMessage warning
+          start: 10,
+          origin: window.location.origin
         },
         events: {
           onReady: (e: any) => {
-            // Just mute, don't play
             try {
-              e.target.mute();
-              e.target.setVolume(0);
+              e.target.mute(); // Ensure muted
+              e.target.setVolume(0); // Set volume to 0
             } catch { }
+            try { e.target.playVideo(); } catch { }
             setMaxQuality(e.target);
-            setShowPlayButton(true); // Always show play button
           },
           onStateChange: (ev: any) => {
             try {
               const state = ev?.data;
               if (state === YT.PlayerState.PLAYING) {
                 setVideoLoaded(true);
-                setShowPlayButton(false); // Hide button when playing
               }
-              // Restart video when it ends
+              // Restart video when it ends to ensure continuous loop
               if (state === YT.PlayerState.ENDED) {
                 try {
+                  ev.target.seekTo(10); // Start from 10 seconds
                   ev.target.playVideo();
                 } catch { }
               }
@@ -98,7 +94,6 @@ export const Hero: React.FC = () => {
     };
 
     initPlayer();
-
     return () => {
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch { }
@@ -111,6 +106,17 @@ export const Hero: React.FC = () => {
 
   return (
     <div className="relative h-[56.25vw] max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
+      {/* Backdrop Image - Always Visible */}
+      <div className="absolute inset-0">
+        <img
+          src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
+          alt={movie.title}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Video Player - Disabled for now */}
+      {/*
       <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none">
         <div ref={containerRef} className={`w-full h-full opacity-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : ''}`} />
       </div>
@@ -122,32 +128,11 @@ export const Hero: React.FC = () => {
           className="w-full h-full object-cover"
         />
       </div>
+      */}
 
       {/* Vignette Overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
-
-      {/* Play Button - Always visible until user plays */}
-      {showPlayButton && (
-        <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer group/play animate-in fade-in duration-1000"
-          onClick={() => {
-            if (playerRef.current) {
-              try {
-                playerRef.current.playVideo();
-                setShowPlayButton(false);
-              } catch { }
-            }
-          }}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-black/40 rounded-full blur-2xl scale-150"></div>
-            <div className="relative bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm rounded-full p-6 shadow-2xl transform transition-all duration-300 group-hover/play:scale-110 group-hover/play:from-white group-hover/play:to-white/90">
-              <Play fill="black" size={40} className="translate-x-1" />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <div className="absolute top-[20%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10">
@@ -159,22 +144,30 @@ export const Hero: React.FC = () => {
           <span className="text-gray-300">{movie.release_date?.substring(0, 4) || '2023'}</span>
           <span className="border border-white/40 px-1 text-xs rounded-sm bg-black/20 uppercase">{movie.type}</span>
         </div>
-        <p className="text-base md:text-xl text-gray-200 drop-shadow-lg line-clamp-3 font-light">
+        <p className="text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-[90%] md:w-full font-medium">
           {movie.overview}
         </p>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 pt-4">
           <button
-            onClick={() => { setShowModal(true); setAutoPlayModal(true); }}
-            className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded font-bold hover:bg-opacity-90 transition text-base md:text-lg shadow-lg"
+            className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-white/80 transition text-lg md:text-xl"
+            onClick={() => {
+              setAutoPlayModal(true);
+              setShowModal(true);
+            }}
           >
-            <Play fill="black" size={20} /> Play
+            <Play fill="black" size={24} />
+            Play
           </button>
           <button
-            onClick={() => { setShowModal(true); setAutoPlayModal(false); }}
-            className="flex items-center gap-2 bg-gray-600/70 text-white px-6 md:px-8 py-2 md:py-3 rounded font-bold hover:bg-gray-600/90 transition text-base md:text-lg shadow-lg backdrop-blur-sm"
+            className="flex items-center gap-2 bg-[rgba(109,109,110,0.7)] text-white px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-[rgba(109,109,110,0.4)] transition text-lg md:text-xl"
+            onClick={() => {
+              setAutoPlayModal(false);
+              setShowModal(true);
+            }}
           >
-            <Info size={20} /> More Info
+            <Info size={24} />
+            More Info
           </button>
         </div>
       </div>

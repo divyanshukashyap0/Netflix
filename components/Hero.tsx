@@ -113,7 +113,45 @@ export const Hero: React.FC = () => {
     };
 
     initPlayer();
+
+    // Additional trigger: Try to play when window gains focus
+    const handleFocus = () => {
+      if (playerRef.current) {
+        setTimeout(() => {
+          try {
+            playerRef.current.playVideo();
+          } catch { }
+        }, 100);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Intersection Observer: Play when hero is visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && playerRef.current) {
+            setTimeout(() => {
+              try {
+                playerRef.current.playVideo();
+              } catch { }
+            }, 500);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
     return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch { }
         playerRef.current = null;

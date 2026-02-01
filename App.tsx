@@ -9,6 +9,7 @@ import { ContentManager } from './pages/admin/ContentManager';
 import { SectionManager } from './pages/admin/SectionManager';
 import { SettingsManager } from './pages/admin/SettingsManager';
 import { PlanManager } from './pages/admin/PlanManager';
+import { ComingSoonManager } from './pages/admin/ComingSoonManager';
 import { Login } from './pages/Login';
 import { Account } from './pages/Account';
 import { InfoPage } from './pages/InfoPage';
@@ -53,6 +54,7 @@ const Router: React.FC = () => {
       case '#/admin/sections': return <SectionManager />;
       case '#/admin/settings': return <SettingsManager />;
       case '#/admin/plans': return <PlanManager />;
+      case '#/admin/coming-soon': return <ComingSoonManager />;
       default: return <AdminDashboard />;
     }
   }

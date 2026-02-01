@@ -33,13 +33,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ user }) => {
                 <span className="text-[10px]">Coming Soon</span>
             </div>
 
-            <div
-                onClick={() => navigate(AppRoute.SEARCH)} // Using Search route but often apps have dedicated Downloads
-                className={`flex flex-col items-center gap-1 w-full py-2 ${isActive(AppRoute.SEARCH) ? 'text-white' : 'text-gray-500'}`}
-            >
-                <Download className="w-6 h-6 p-0.5 border-2 border-current rounded-full" />
-                <span className="text-[10px]">Downloads</span>
-            </div>
+
 
             <div
                 onClick={() => navigate(AppRoute.SEARCH)}

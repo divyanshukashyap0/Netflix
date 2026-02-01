@@ -3,6 +3,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { db } from '../../lib/firebase';
 import { collection, getCountFromServer } from 'firebase/firestore';
 import { Users, Film, PlayCircle, HardDrive } from 'lucide-react';
+import { AppRoute } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -51,6 +52,15 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-gray-400 text-sm">{card.label}</p>
           </div>
         ))}
+      </div>
+
+      <div className="bg-[#1f1f1f] rounded-xl border border-gray-800 p-6 mt-6">
+        <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
+        <div className="flex gap-4">
+          <button onClick={() => window.location.hash = AppRoute.ADMIN_CONTENT} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white">Manage Content</button>
+          <button onClick={() => window.location.hash = AppRoute.ADMIN_COMING_SOON} className="px-4 py-2 bg-[#e50914] hover:bg-red-700 rounded text-sm text-white font-bold">Manage Coming Soon</button>
+          <button onClick={() => window.location.hash = AppRoute.ADMIN_SECTIONS} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white">Edit Sections</button>
+        </div>
       </div>
 
       <div className="bg-[#1f1f1f] rounded-xl border border-gray-800 p-6 mt-6">

@@ -13,10 +13,16 @@ export interface Content {
   createdAt: string;
   cast?: string[];
   tags?: string[];
+  comingSoon?: boolean;
 }
 
 export interface Section {
   id: string;
+  // (omitting untouched lines in replacement content to safe space if possible, but tool requires valid replacement) 
+  // Actually I will do two separate calls or just include the full context if small enough.
+  // The replace_file_content tool needs exact target content.
+  // I'll split this into two separate edits for safety since they are far apart in the file.
+
   title: string;
   order: number;
   type: 'trending' | 'genre' | 'curated' | 'originals';
@@ -86,6 +92,11 @@ export enum AppRoute {
   ACCOUNT = '/account',
   PLANS = '/plans',
   ADMIN = '/admin',
+  ADMIN_CONTENT = '/admin/content',
+  ADMIN_SECTIONS = '/admin/sections',
+  ADMIN_PLANS = '/admin/plans',
+  ADMIN_SETTINGS = '/admin/settings',
+  ADMIN_COMING_SOON = '/admin/coming-soon',
   TV_SHOWS = '/tv-shows',
   MOVIES = '/movies',
   NEW_POPULAR = '/new-popular',

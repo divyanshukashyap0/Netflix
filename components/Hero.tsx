@@ -62,7 +62,6 @@ export const Hero: React.FC = () => {
           playlist: movie.youtubeId,
           modestbranding: 1,
           iv_load_policy: 3,
-          origin: window.location.origin,
           enablejsapi: 1,
           disablekb: 1,
           fs: 0

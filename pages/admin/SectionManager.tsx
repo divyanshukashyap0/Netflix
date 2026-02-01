@@ -86,7 +86,11 @@ export const SectionManager: React.FC = () => {
                         <h3 className="font-bold mb-4">Current Sections</h3>
                         <div className="space-y-3">
                             {sections.map((s, idx) => (
-                                <div key={s.id} className={`flex items-center justify-between bg-[#2a2a2a] p-4 rounded border ${editingId === s.id ? 'border-[#e50914]' : 'border-gray-700'}`}>
+                                <div
+                                    key={s.id}
+                                    className={`flex items-center justify-between bg-[#2a2a2a] p-4 rounded border ${editingId === s.id ? 'border-[#e50914]' : 'border-gray-700'} cursor-pointer hover:bg-[#333] transition-colors`}
+                                    onClick={() => handleEdit(s)}
+                                >
                                     <div className="flex items-center gap-4">
                                         <span className="text-gray-500 font-mono">#{s.order}</span>
                                         <div>
@@ -97,8 +101,7 @@ export const SectionManager: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => handleEdit(s)} className="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10"><Pencil size={16} /></button>
-                                        <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded"><Trash2 size={16} /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }} className="text-red-500 hover:bg-red-500/10 p-2 rounded"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -159,6 +162,6 @@ export const SectionManager: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 };

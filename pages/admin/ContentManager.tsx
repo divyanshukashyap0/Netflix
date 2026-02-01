@@ -237,7 +237,11 @@ export const ContentManager: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-gray-800">
             {contents.map(c => (
-              <tr key={c.id} className="hover:bg-[#2a2a2a]">
+              <tr
+                key={c.id}
+                className="hover:bg-[#2a2a2a] cursor-pointer transition-colors"
+                onClick={() => startEdit(c)}
+              >
                 <td className="p-4 font-medium flex items-center gap-3">
                   <img src={c.poster_path} className="w-8 h-12 object-cover rounded bg-gray-700" alt="" />
                   {c.title}
@@ -245,8 +249,8 @@ export const ContentManager: React.FC = () => {
                 <td className="p-4 text-gray-400 capitalize">{c.type}</td>
                 <td className="p-4 text-green-500">{c.vote_average}</td>
                 <td className="p-4 text-right">
-                  <button onClick={() => startEdit(c)} className="text-gray-400 hover:text-white mr-3"><Pencil size={18} /></button>
-                  <button onClick={() => handleDelete(c.id)} className="text-red-500 hover:text-red-400"><Trash2 size={18} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); startEdit(c); }} className="text-gray-400 hover:text-white mr-3 md:hidden"><Pencil size={18} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="text-red-500 hover:text-red-400 p-2 hover:bg-red-500/10 rounded-full"><Trash2 size={18} /></button>
                 </td>
               </tr>
             ))}

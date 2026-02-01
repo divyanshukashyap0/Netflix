@@ -10,7 +10,6 @@ export const Hero: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const [autoplayFailed, setAutoplayFailed] = useState(false);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -63,38 +62,32 @@ export const Hero: React.FC = () => {
           playlist: movie.youtubeId,
           modestbranding: 1,
           iv_load_policy: 3,
-          start: 10,
           origin: window.location.origin,
-          enablejsapi: 1
+          enablejsapi: 1,
+          disablekb: 1,
+          fs: 0
         },
         events: {
           onReady: (e: any) => {
+            // Aggressive muting
             try {
-              e.target.mute(); // Ensure muted
-              e.target.setVolume(0); // Set volume to 0
+              e.target.mute();
+              e.target.setVolume(0);
             } catch { }
 
-            // Retry playback multiple times to ensure it starts
+            // Immediate play with retries
             const attemptPlay = (attempts = 0) => {
-              if (attempts > 5) {
-                // After 5 failed attempts, show manual play button
-                setAutoplayFailed(true);
-                return;
-              }
+              if (attempts > 10) return; // More retries
               try {
                 e.target.playVideo();
                 setTimeout(() => {
                   const state = e.target.getPlayerState();
-                  // If not playing (state 1), retry
                   if (state !== 1) {
                     attemptPlay(attempts + 1);
-                  } else {
-                    // Successfully playing
-                    setAutoplayFailed(false);
                   }
-                }, 500);
+                }, 200); // Faster retries
               } catch {
-                setTimeout(() => attemptPlay(attempts + 1), 500);
+                setTimeout(() => attemptPlay(attempts + 1), 200);
               }
             };
 
@@ -178,25 +171,6 @@ export const Hero: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Manual Play Button Overlay - Shows when autoplay fails */}
-      {autoplayFailed && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-sm">
-          <button
-            onClick={() => {
-              if (playerRef.current) {
-                try {
-                  playerRef.current.playVideo();
-                  setAutoplayFailed(false);
-                } catch { }
-              }
-            }}
-            className="bg-white/90 hover:bg-white text-black rounded-full p-6 transition-all transform hover:scale-110 shadow-2xl"
-          >
-            <Play fill="black" size={48} />
-          </button>
-        </div>
-      )}
 
       {showModal && <Modal movie={movie} autoPlay={autoPlayModal} onClose={() => setShowModal(false)} />}
     </div>

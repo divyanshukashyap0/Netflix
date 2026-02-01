@@ -117,8 +117,8 @@ export const Hero: React.FC = () => {
 
   return (
     <div className="relative h-[85vh] md:h-[56.25vw] md:max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
-      {/* Backdrop Image - Always Visible */}
-      <div className="absolute inset-0">
+      {/* Fallback Backdrop Image - Shows when video not loaded */}
+      <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
         <img
           src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
           alt={movie.title}
@@ -126,21 +126,14 @@ export const Hero: React.FC = () => {
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none">
-        <div ref={containerRef} className={`w-full h-full opacity-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : ''}`} />
+      {/* Video Player - Above backdrop, below content */}
+      <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none z-[1]">
+        <div ref={containerRef} className={`w-full h-full transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`} />
       </div>
 
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
-        <img
-          src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
-          alt={movie.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      {/* Vignette Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90"></div>
+      {/* Vignette Overlays - Above video */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90 z-[2]"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90 z-[2]"></div>
 
       {/* Manual Mute Toggle (Always visible if video loaded) */}
       {videoLoaded && (

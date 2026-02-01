@@ -99,7 +99,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
           modestbranding: 1,
           iv_load_policy: 3,
           cc_load_policy: 1,
-          origin: window.location.origin
+          origin: window.location.origin // CRITICAL FIX: Eliminates postMessage error
         },
         events: {
           onReady: (e: any) => {

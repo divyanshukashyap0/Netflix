@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Movie } from '../types';
 import { Modal } from './Modal';
-import { getHeroContent } from '../services/contentService'; // Changed import
-import { getImage } from '../services/tmdb'; // Helper utility only
+import { getHeroContent } from '../services/contentService';
 import { Info, Play } from 'lucide-react';
 
 export const Hero: React.FC = () => {
@@ -11,114 +10,45 @@ export const Hero: React.FC = () => {
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const playerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const loadHero = async () => {
-      // Fetch dynamic hero from Firestore
       const heroContent = await getHeroContent();
       if (heroContent) setMovie(heroContent);
     };
     loadHero();
   }, []);
 
+  // YouTube postMessage API for mute control
   useEffect(() => {
-    if (playerRef.current && playerRef.current.mute && playerRef.current.unMute) {
-      if (isMuted) {
-        playerRef.current.mute();
-      } else {
-        playerRef.current.unMute();
-        playerRef.current.setVolume(100);
-      }
+    if (iframeRef.current && videoLoaded) {
+      const command = isMuted ? 'mute' : 'unMute';
+      iframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: command }),
+        '*'
+      );
     }
-  }, [isMuted]);
+  }, [isMuted, videoLoaded]);
 
+  // Set video as loaded after a short delay to allow iframe to initialize
   useEffect(() => {
-    const ensureYouTubeAPI = () =>
-      new Promise<any>((resolve) => {
-        const w = window as any;
-        if (w.YT && w.YT.Player) resolve(w.YT);
-        else {
-          const tag = document.createElement('script');
-          tag.src = 'https://www.youtube.com/iframe_api';
-          document.body.appendChild(tag);
-          w.onYouTubeIframeAPIReady = () => resolve(w.YT);
-        }
-      });
-
-    const setMaxQuality = (player: any) => {
-      if (!player || !player.getAvailableQualityLevels) return;
-      const levels: string[] = player.getAvailableQualityLevels() || [];
-      const order = ['highres', 'hd1080', 'hd720', 'large', 'medium', 'small'];
-      const best = order.find(q => levels.includes(q)) || 'highres';
-      if (player.setPlaybackQuality) player.setPlaybackQuality(best);
-    };
-
-    const initPlayer = async () => {
-      if (!movie?.youtubeId || !containerRef.current) return;
-      const YT = await ensureYouTubeAPI();
-      if (playerRef.current) {
-        try { playerRef.current.destroy(); } catch { }
-        playerRef.current = null;
-      }
-      playerRef.current = new YT.Player(containerRef.current, {
-        videoId: movie.youtubeId,
-        playerVars: {
-          autoplay: 1,
-          mute: 1, // Start muted strictly for browser policy
-          playsinline: 1,
-          controls: 0,
-          rel: 0,
-          loop: 1,
-          playlist: movie.youtubeId, // Required for loop
-          modestbranding: 1,
-          iv_load_policy: 3,
-          start: 10,
-          origin: window.location.origin
-        },
-        events: {
-          onReady: (e: any) => {
-            try {
-              e.target.mute();
-            } catch { }
-            try { e.target.playVideo(); } catch { }
-            setMaxQuality(e.target);
-          },
-          onStateChange: (ev: any) => {
-            try {
-              const state = ev?.data;
-              if (state === YT.PlayerState.PLAYING) {
-                setVideoLoaded(true);
-              }
-              // Restart video when it ends to ensure continuous loop
-              if (state === YT.PlayerState.ENDED) {
-                try {
-                  ev.target.seekTo(10); // Start from 10 seconds
-                  ev.target.playVideo();
-                } catch { }
-              }
-            } catch { }
-          }
-        }
-      });
-    };
-
-    initPlayer();
-    return () => {
-      if (playerRef.current) {
-        try { playerRef.current.destroy(); } catch { }
-        playerRef.current = null;
-      }
-    };
+    if (movie?.youtubeId) {
+      const timer = setTimeout(() => setVideoLoaded(true), 2000);
+      return () => clearTimeout(timer);
+    }
   }, [movie?.youtubeId]);
 
   if (!movie) return <div className="h-[70vh] md:h-[56.25vw] bg-[#141414] animate-pulse flex items-center justify-center text-gray-700">Loading Preview...</div>;
 
+  const youtubeEmbedUrl = movie.youtubeId
+    ? `https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${movie.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=10&enablejsapi=1&origin=${window.location.origin}`
+    : null;
+
   return (
     <div className="relative h-[85vh] md:h-[56.25vw] md:max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
       {/* Fallback Backdrop Image - Shows when video not loaded */}
-      <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${videoLoaded ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${videoLoaded && youtubeEmbedUrl ? 'opacity-0' : 'opacity-100'}`}>
         <img
           src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
           alt={movie.title}
@@ -126,31 +56,27 @@ export const Hero: React.FC = () => {
         />
       </div>
 
-      {/* Video Player - Above backdrop, below content */}
-      <div className="absolute inset-0 w-full h-full scale-[1.35] pointer-events-none z-[1]">
-        <div
-          ref={containerRef}
-          id="hero-yt-player"
-          className={`w-full h-full transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        />
-      </div>
-      <style>{`
-        #hero-yt-player iframe {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100% !important;
-          height: 100% !important;
-        }
-      `}</style>
+      {/* Video Player - Direct iframe embed */}
+      {youtubeEmbedUrl && (
+        <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
+          <iframe
+            ref={iframeRef}
+            src={youtubeEmbedUrl}
+            title="Hero Video"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] min-w-[200%] min-h-[200%]"
+            style={{ border: 'none' }}
+          />
+        </div>
+      )}
 
       {/* Vignette Overlays - Above video */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90 z-[2]"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90 z-[2]"></div>
 
-      {/* Manual Mute Toggle (Always visible if video loaded) */}
-      {videoLoaded && (
+      {/* Manual Mute Toggle */}
+      {videoLoaded && youtubeEmbedUrl && (
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="absolute bottom-[25%] right-8 z-30 border border-white/30 rounded-full p-3 bg-black/20 hover:bg-white/10 transition backdrop-blur-sm hidden md:flex items-center justify-center"

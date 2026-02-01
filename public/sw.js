@@ -69,7 +69,7 @@ self.addEventListener('fetch', (event) => {
                 if (!response || response.status !== 200 || response.type !== 'basic') {
                     return response;
                 }
-                const responseToCache = response.clone();
+                const responseToCache = response.();
                 caches.open(DYNAMIC_CACHE).then((cache) => {
                     cache.put(event.request, responseToCache);
                 });

@@ -38,11 +38,16 @@ export const Hero: React.FC = () => {
     }
   }, [isMuted, videoLoaded]);
 
-  // Set video as loaded after a short delay to allow iframe to initialize
+  // Start video after 5 second delay for better UX
+  const [showVideo, setShowVideo] = useState(false);
   useEffect(() => {
     if (movie?.youtubeId) {
-      const timer = setTimeout(() => setVideoLoaded(true), 2000);
-      return () => clearTimeout(timer);
+      const showTimer = setTimeout(() => setShowVideo(true), 5000); // 5 second delay
+      const loadTimer = setTimeout(() => setVideoLoaded(true), 7000); // Mark as loaded after 7s
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(loadTimer);
+      };
     }
   }, [movie?.youtubeId]);
 
@@ -65,8 +70,8 @@ export const Hero: React.FC = () => {
         />
       </div>
 
-      {/* Video Player - Direct iframe embed */}
-      {youtubeEmbedUrl && (
+      {/* Video Player - Direct iframe embed (starts after 5 second delay) */}
+      {youtubeEmbedUrl && showVideo && (
         <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
           <iframe
             ref={iframeRef}

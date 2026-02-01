@@ -159,8 +159,8 @@ export const ContentManager: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[600px]">
           <thead className="bg-[#141414] text-gray-400 text-xs uppercase">
             <tr>
               <th className="p-4">Title</th>

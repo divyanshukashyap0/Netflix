@@ -10,6 +10,7 @@ export const Hero: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [autoplayFailed, setAutoplayFailed] = useState(false);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +76,11 @@ export const Hero: React.FC = () => {
 
             // Retry playback multiple times to ensure it starts
             const attemptPlay = (attempts = 0) => {
-              if (attempts > 5) return;
+              if (attempts > 5) {
+                // After 5 failed attempts, show manual play button
+                setAutoplayFailed(true);
+                return;
+              }
               try {
                 e.target.playVideo();
                 setTimeout(() => {
@@ -83,6 +88,9 @@ export const Hero: React.FC = () => {
                   // If not playing (state 1), retry
                   if (state !== 1) {
                     attemptPlay(attempts + 1);
+                  } else {
+                    // Successfully playing
+                    setAutoplayFailed(false);
                   }
                 }, 500);
               } catch {
@@ -151,33 +159,44 @@ export const Hero: React.FC = () => {
           <span className="text-gray-300">{movie.release_date?.substring(0, 4) || '2023'}</span>
           <span className="border border-white/40 px-1 text-xs rounded-sm bg-black/20 uppercase">{movie.type}</span>
         </div>
-        <p className="text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-[90%] md:w-full font-medium">
+        <p className="text-base md:text-xl text-gray-200 drop-shadow-lg line-clamp-3 font-light">
           {movie.overview}
         </p>
 
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex items-center gap-3">
           <button
-            className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-white/80 transition text-lg md:text-xl"
-            onClick={() => {
-              setAutoPlayModal(true);
-              setShowModal(true);
-            }}
+            onClick={() => { setShowModal(true); setAutoPlayModal(true); }}
+            className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded font-bold hover:bg-opacity-90 transition text-base md:text-lg shadow-lg"
           >
-            <Play fill="black" size={24} />
-            Play
+            <Play fill="black" size={20} /> Play
           </button>
           <button
-            className="flex items-center gap-2 bg-[rgba(109,109,110,0.7)] text-white px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-[rgba(109,109,110,0.4)] transition text-lg md:text-xl"
-            onClick={() => {
-              setAutoPlayModal(false);
-              setShowModal(true);
-            }}
+            onClick={() => { setShowModal(true); setAutoPlayModal(false); }}
+            className="flex items-center gap-2 bg-gray-600/70 text-white px-6 md:px-8 py-2 md:py-3 rounded font-bold hover:bg-gray-600/90 transition text-base md:text-lg shadow-lg backdrop-blur-sm"
           >
-            <Info size={24} />
-            More Info
+            <Info size={20} /> More Info
           </button>
         </div>
       </div>
+
+      {/* Manual Play Button Overlay - Shows when autoplay fails */}
+      {autoplayFailed && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-sm">
+          <button
+            onClick={() => {
+              if (playerRef.current) {
+                try {
+                  playerRef.current.playVideo();
+                  setAutoplayFailed(false);
+                } catch { }
+              }
+            }}
+            className="bg-white/90 hover:bg-white text-black rounded-full p-6 transition-all transform hover:scale-110 shadow-2xl"
+          >
+            <Play fill="black" size={48} />
+          </button>
+        </div>
+      )}
 
       {showModal && <Modal movie={movie} autoPlay={autoPlayModal} onClose={() => setShowModal(false)} />}
     </div>

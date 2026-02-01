@@ -3,107 +3,162 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { db } from '../../lib/firebase';
 import { collection, getDocs, updateDoc, doc, deleteDoc, addDoc, orderBy, query } from 'firebase/firestore';
 import { Section } from '../../types';
-import { Trash2, Plus, Move } from 'lucide-react';
+import { Trash2, Plus, Pencil, X } from 'lucide-react';
 
 export const SectionManager: React.FC = () => {
-  const [sections, setSections] = useState<Section[]>([]);
-  const [newTitle, setNewTitle] = useState('');
-  const [newType, setNewType] = useState('genre');
-  const [newFilter, setNewFilter] = useState('');
-  const [newScope, setNewScope] = useState<'home' | 'tv' | 'movie' | 'new'>('home');
+    const [sections, setSections] = useState<Section[]>([]);
+    // Form State
+    const [title, setTitle] = useState('');
+    const [type, setType] = useState('genre');
+    const [filter, setFilter] = useState('');
+    const [scope, setScope] = useState<'home' | 'tv' | 'movie' | 'new'>('home');
 
-  const fetchSections = async () => {
-    const q = query(collection(db, 'sections'), orderBy('order', 'asc'));
-    const snap = await getDocs(q);
-    setSections(snap.docs.map(d => ({ id: d.id, ...d.data() } as Section)));
-  };
+    // Edit State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchSections(); }, []);
+    const fetchSections = async () => {
+        const q = query(collection(db, 'sections'), orderBy('order', 'asc'));
+        const snap = await getDocs(q);
+        setSections(snap.docs.map(d => ({ id: d.id, ...d.data() } as Section)));
+    };
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await addDoc(collection(db, 'sections'), {
-        title: newTitle,
-        type: newType,
-        genreFilter: newFilter,
-        scope: newScope,
-        order: sections.length + 1,
-        enabled: true
-    });
-    setNewTitle('');
-    setNewFilter('');
-    fetchSections();
-  };
+    useEffect(() => { fetchSections(); }, []);
 
-  const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, 'sections', id));
-    fetchSections();
-  };
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const data = {
+            title,
+            type: type as any,
+            genreFilter: filter,
+            scope,
+            enabled: true
+        };
 
-  return (
-    <AdminLayout title="Homepage Layout">
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           <div className="lg:col-span-2">
-               <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 p-6">
-                  <h3 className="font-bold mb-4">Current Sections</h3>
-                  <div className="space-y-3">
-                      {sections.map((s, idx) => (
-                          <div key={s.id} className="flex items-center justify-between bg-[#2a2a2a] p-4 rounded border border-gray-700">
-                             <div className="flex items-center gap-4">
-                                 <span className="text-gray-500 font-mono">#{idx + 1}</span>
-                                 <div>
-                                     <div className="font-bold">{s.title}</div>
-                                     <div className="text-xs text-gray-400 capitalize">
-                                       {s.type} {s.genreFilter && `(${s.genreFilter})`} • <span className="uppercase">{(s.scope || 'home').replace('new','New & Popular')}</span>
-                                     </div>
-                                 </div>
-                             </div>
-                             <div className="flex items-center gap-2">
-                                 <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded"><Trash2 size={16}/></button>
-                             </div>
-                          </div>
-                      ))}
-                      {sections.length === 0 && <p className="text-gray-500 text-center py-4">No sections configured.</p>}
-                  </div>
-               </div>
-           </div>
+        try {
+            if (isEditing && editingId) {
+                await updateDoc(doc(db, 'sections', editingId), data);
+            } else {
+                await addDoc(collection(db, 'sections'), {
+                    ...data,
+                    order: sections.length + 1,
+                });
+            }
+            resetForm();
+            fetchSections();
+        } catch (err) {
+            console.error("Error saving section:", err);
+            alert("Failed to save section");
+        }
+    };
 
-           <div>
-              <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 p-6 sticky top-24">
-                  <h3 className="font-bold mb-4">Add New Section</h3>
-                  <form onSubmit={handleAdd} className="space-y-4">
-                      <div>
-                          <label className="block text-xs text-gray-400 mb-1">Section Title</label>
-                          <input required value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm" placeholder="e.g. Action Movies" />
-                      </div>
-                      <div>
-                          <label className="block text-xs text-gray-400 mb-1">Appears On</label>
-                          <select value={newScope} onChange={e => setNewScope(e.target.value as any)} className="w-full bg-[#333] rounded p-2 text_white border border-gray-600 text-sm">
-                              <option value="home">Home</option>
-                              <option value="tv">TV Shows</option>
-                              <option value="movie">Movies</option>
-                              <option value="new">New &amp; Popular</option>
-                          </select>
-                      </div>
-                      <div>
-                          <label className="block text-xs text-gray-400 mb-1">Type</label>
-                          <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm">
-                              <option value="trending">Trending Now (Auto)</option>
-                              <option value="originals">Originals (Auto)</option>
-                              <option value="genre">By Genre</option>
-                          </select>
-                      </div>
-                      {newType === 'genre' && (
-                          <div>
-                              <label className="block text-xs text-gray-400 mb-1">Genre</label>
-                              <input required value={newFilter} onChange={e => setNewFilter(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm" placeholder="e.g. Action" />
-                          </div>
-                      )}
-                      <button type="submit" className="w-full bg-[#e50914] py-2 rounded font-bold hover:bg-red-700 transition text-sm">Add Section</button>
-                  </form>
-              </div>
-           </div>
-       </div>
-    </AdminLayout>
-  );
+    const handleEdit = (section: Section) => {
+        setIsEditing(true);
+        setEditingId(section.id);
+        setTitle(section.title);
+        setType(section.type);
+        setFilter(section.genreFilter || '');
+        setScope(section.scope || 'home');
+        // Scroll to top or form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this section?")) return;
+        await deleteDoc(doc(db, 'sections', id));
+        fetchSections();
+    };
+
+    const resetForm = () => {
+        setIsEditing(false);
+        setEditingId(null);
+        setTitle('');
+        setType('genre');
+        setFilter('');
+        setScope('home');
+    };
+
+    return (
+        <AdminLayout title="Homepage Layout">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 order-2 lg:order-1">
+                    <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 p-6">
+                        <h3 className="font-bold mb-4">Current Sections</h3>
+                        <div className="space-y-3">
+                            {sections.map((s, idx) => (
+                                <div key={s.id} className={`flex items-center justify-between bg-[#2a2a2a] p-4 rounded border ${editingId === s.id ? 'border-[#e50914]' : 'border-gray-700'}`}>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-gray-500 font-mono">#{s.order}</span>
+                                        <div>
+                                            <div className="font-bold">{s.title}</div>
+                                            <div className="text-xs text-gray-400 capitalize">
+                                                {s.type} {s.genreFilter && `(${s.genreFilter})`} • <span className="uppercase text-[#e50914]">{(s.scope || 'home').replace('new', 'New & Popular')}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => handleEdit(s)} className="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10"><Pencil size={16} /></button>
+                                        <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
+                            ))}
+                            {sections.length === 0 && <p className="text-gray-500 text-center py-4">No sections configured.</p>}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="order-1 lg:order-2">
+                    <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 p-6 sticky top-24">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold">{isEditing ? 'Edit Section' : 'Add New Section'}</h3>
+                            {isEditing && <button onClick={resetForm} size={16} className="text-gray-400 hover:text-white"><X size={20} /></button>}
+                        </div>
+
+                        <form onSubmit={handleSave} className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">Section Title</label>
+                                <input required value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm focus:border-white outline-none" placeholder="e.g. Action Movies" />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">Appears On (Page)</label>
+                                <select value={scope} onChange={e => setScope(e.target.value as any)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm outline-none">
+                                    <option value="home">Home</option>
+                                    <option value="tv">TV Shows</option>
+                                    <option value="movie">Movies</option>
+                                    <option value="new">New & Popular</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">Content Type</label>
+                                <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm outline-none">
+                                    <option value="genre">By Genre (Auto)</option>
+                                    <option value="curated">Curated Collection (Manual)</option>
+                                    <option value="trending">Trending Now (Auto)</option>
+                                    <option value="originals">Originals (Auto)</option>
+                                </select>
+                            </div>
+                            {type === 'genre' && (
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Genre Filter</label>
+                                    <input required value={filter} onChange={e => setFilter(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm focus:border-white outline-none" placeholder="e.g. Action" />
+                                </div>
+                            )}
+                            {type === 'curated' && (
+                                <div className="bg-blue-900/20 p-3 rounded border border-blue-900/50 text-xs text-blue-200">
+                                    For curated sections, assign content from the <strong>Content Manager</strong>.
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                {isEditing && <button type="button" onClick={resetForm} className="flex-1 bg-gray-700 py-2 rounded font-bold hover:bg-gray-600 transition text-sm">Cancel</button>}
+                                <button type="submit" className="flex-1 bg-[#e50914] py-2 rounded font-bold hover:bg-red-700 transition text-sm">
+                                    {isEditing ? 'Update Section' : 'Add Section'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </AdminLayout>
+    );
 };

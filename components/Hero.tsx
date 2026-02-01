@@ -10,6 +10,7 @@ export const Hero: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [autoPlayModal, setAutoPlayModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(false);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -76,13 +77,19 @@ export const Hero: React.FC = () => {
 
             // Immediate play with retries
             const attemptPlay = (attempts = 0) => {
-              if (attempts > 10) return; // More retries
+              if (attempts > 10) {
+                // Show subtle play button after failed autoplay
+                setTimeout(() => setShowPlayButton(true), 1000);
+                return;
+              }
               try {
                 e.target.playVideo();
                 setTimeout(() => {
                   const state = e.target.getPlayerState();
                   if (state !== 1) {
                     attemptPlay(attempts + 1);
+                  } else {
+                    setShowPlayButton(false); // Hide if playing
                   }
                 }, 200); // Faster retries
               } catch {
@@ -178,6 +185,28 @@ export const Hero: React.FC = () => {
       {/* Vignette Overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
+
+      {/* Subtle Play Button - Only shows if autoplay fails */}
+      {showPlayButton && !videoLoaded && (
+        <div
+          className="absolute inset-0 flex items-center justify-center cursor-pointer group/play animate-in fade-in duration-1000"
+          onClick={() => {
+            if (playerRef.current) {
+              try {
+                playerRef.current.playVideo();
+                setShowPlayButton(false);
+              } catch { }
+            }
+          }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-black/40 rounded-full blur-2xl scale-150"></div>
+            <div className="relative bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm rounded-full p-6 shadow-2xl transform transition-all duration-300 group-hover/play:scale-110 group-hover/play:from-white group-hover/play:to-white/90">
+              <Play fill="black" size={40} className="translate-x-1" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="absolute top-[20%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10">

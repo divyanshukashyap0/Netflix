@@ -102,16 +102,16 @@ export const Hero: React.FC = () => {
     };
   }, [movie?.youtubeId]);
 
-  if (!movie) return <div className="h-[56.25vw] bg-[#141414] animate-pulse flex items-center justify-center text-gray-700">Loading Preview...</div>;
+  if (!movie) return <div className="h-[70vh] md:h-[56.25vw] bg-[#141414] animate-pulse flex items-center justify-center text-gray-700">Loading Preview...</div>;
 
   return (
-    <div className="relative h-[56.25vw] max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
+    <div className="relative h-[85vh] md:h-[56.25vw] md:max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
       {/* Backdrop Image - Always Visible */}
       <div className="absolute inset-0">
         <img
           src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
           alt={movie.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
         />
       </div>
 
@@ -132,11 +132,11 @@ export const Hero: React.FC = () => {
 
       {/* Vignette Overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90"></div>
 
       {/* Content */}
-      <div className="absolute top-[20%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10">
-        <h1 className="text-4xl md:text-7xl font-bold drop-shadow-xl text-white tracking-tighter">
+      <div className="absolute top-[25%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10 w-full pr-4">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold drop-shadow-xl text-white tracking-tighter leading-tight">
           {movie.title}
         </h1>
         <div className="flex items-center gap-3 text-white font-semibold drop-shadow-md text-lg">
@@ -144,13 +144,13 @@ export const Hero: React.FC = () => {
           <span className="text-gray-300">{movie.release_date?.substring(0, 4) || '2023'}</span>
           <span className="border border-white/40 px-1 text-xs rounded-sm bg-black/20 uppercase">{movie.type}</span>
         </div>
-        <p className="text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-[90%] md:w-full font-medium">
+        <p className="text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-full md:w-full font-medium leading-relaxed">
           {movie.overview}
         </p>
 
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 pt-4 w-full md:w-auto">
           <button
-            className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-white/80 transition text-lg md:text-xl"
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-white text-black px-6 md:px-8 py-3 md:py-3 rounded md:rounded-md font-bold hover:bg-white/80 transition text-lg md:text-xl active:scale-95"
             onClick={() => {
               setAutoPlayModal(true);
               setShowModal(true);
@@ -160,7 +160,7 @@ export const Hero: React.FC = () => {
             Play
           </button>
           <button
-            className="flex items-center gap-2 bg-[rgba(109,109,110,0.7)] text-white px-6 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-[rgba(109,109,110,0.4)] transition text-lg md:text-xl"
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-[rgba(109,109,110,0.7)] text-white px-6 md:px-8 py-3 md:py-3 rounded md:rounded-md font-bold hover:bg-[rgba(109,109,110,0.4)] transition text-lg md:text-xl active:scale-95"
             onClick={() => {
               setAutoPlayModal(false);
               setShowModal(true);

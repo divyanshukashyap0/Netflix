@@ -36,12 +36,12 @@ export const Row: React.FC<RowProps> = ({ section, isLarge }) => {
 
   return (
     <div
-      className="mb-8 pl-4 md:pl-12 group relative"
+      className="mb-4 md:mb-8 pl-4 md:pl-12 group relative"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-sm md:text-xl font-semibold mb-2 text-[#e5e5e5] hover:text-white cursor-pointer transition w-fit">
+        <h2 className="text-base md:text-xl font-semibold mb-2 text-[#e5e5e5] hover:text-white cursor-pointer transition w-fit">
           {section.title}
         </h2>
         <button
@@ -56,7 +56,7 @@ export const Row: React.FC<RowProps> = ({ section, isLarge }) => {
         {/* Left Control */}
         <button
           onClick={() => scroll('left')}
-          className={`absolute left-0 top-0 bottom-0 z-40 bg-black/50 hover:bg-black/70 w-12 flex items-center justify-center transition-all duration-300 h-full rounded-r ${showControls ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute left-0 top-0 bottom-0 z-40 bg-black/50 hover:bg-black/70 w-12 hidden md:flex items-center justify-center transition-all duration-300 h-full rounded-r ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
           <ChevronLeft className="text-white" size={32} />
         </button>
@@ -80,7 +80,7 @@ export const Row: React.FC<RowProps> = ({ section, isLarge }) => {
         {/* Right Control */}
         <button
           onClick={() => scroll('right')}
-          className={`absolute right-0 top-0 bottom-0 z-40 bg-black/50 hover:bg-black/70 w-12 flex items-center justify-center transition-all duration-300 h-full rounded-l ${showControls ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute right-0 top-0 bottom-0 z-40 bg-black/50 hover:bg-black/70 w-12 hidden md:flex items-center justify-center transition-all duration-300 h-full rounded-l ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
           <ChevronRight className="text-white" size={32} />
         </button>

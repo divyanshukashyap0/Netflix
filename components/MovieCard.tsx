@@ -36,8 +36,14 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
     return (
         <div
             className={`relative flex-none transition-all duration-300 ${isLarge ? 'w-[160px] md:w-[200px] h-[240px] md:h-[300px]' : 'w-[200px] md:w-[240px] h-[110px] md:h-[135px]'}`}
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={() => {
+                if (window.innerWidth >= 768) setIsHovered(true);
+            }}
             onMouseLeave={() => setIsHovered(false)}
+            onClick={() => {
+                // On mobile, clicking acts as select
+                if (window.innerWidth < 768) onSelect(movie);
+            }}
         >
             <motion.div
                 className="absolute top-0 bg-[#181818] rounded-md shadow-xl z-50 overflow-hidden"
@@ -65,6 +71,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                         <img
                             src={getImage(isLarge ? movie.poster_path : movie.backdrop_path)}
                             alt={movie.title}
+                            loading="lazy"
                             className="w-full h-full object-cover rounded-t-md"
                         />
                     )}

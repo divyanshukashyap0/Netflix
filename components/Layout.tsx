@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store';
 import { AppRoute } from '../types';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
+import { Footer } from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,14 +33,21 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
     <div className="min-h-screen bg-[#141414] text-white">
       {showNav && (
         <nav
-          className={`fixed w-full z-[100] transition-colors duration-500 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled ? 'bg-[#141414]' : 'bg-gradient-to-b from-black/80 to-transparent'
+          className={`fixed w-full z-[100] transition-colors duration-500 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled || mobileMenuOpen ? 'bg-[#141414]' : 'bg-gradient-to-b from-black/80 to-transparent'
             }`}
         >
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
+            {/* Mobile Menu Toggle */}
+            {user && (
+              <div className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {mobileMenuOpen ? <X className="w-6 h-6 cursor-pointer" /> : <Menu className="w-6 h-6 cursor-pointer" />}
+              </div>
+            )}
+
             <img
               src="/logoN.png"
               alt="NETFLIX"
-              className="h-16 md:h-20 cursor-pointer object-contain"
+              className="h-8 md:h-20 cursor-pointer object-contain"
               onClick={() => window.location.hash = AppRoute.BROWSE}
             />
             {user && (
@@ -52,7 +61,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
             )}
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
             {user ? (
               <>
                 <form onSubmit={handleSearchSubmit} className={`flex items-center border border-white/0 ${searchOpen ? 'border-white/100 bg-black/80' : ''} transition-all duration-300 p-1`}>
@@ -69,14 +78,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
                     id="searchInput"
                     type="text"
                     placeholder="Titles, people, genres"
-                    className={`${searchOpen ? 'w-60 px-2' : 'w-0 px-0'} bg-transparent transition-all duration-300 focus:outline-none text-sm`}
+                    className={`${searchOpen ? 'w-40 md:w-60 px-2' : 'w-0 px-0'} bg-transparent transition-all duration-300 focus:outline-none text-sm`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onBlur={() => !searchQuery && setSearchOpen(false)}
                   />
                 </form>
 
-                <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300" />
+                <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 hidden md:block" />
 
                 <div className="relative group">
                   <div
@@ -136,17 +145,31 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
             ) : (
               <button
                 onClick={() => window.location.hash = AppRoute.LOGIN}
-                className="bg-[#e50914] px-4 py-1.5 rounded text-sm font-medium hover:bg-[#f40612] transition"
+                className="bg-[#e50914] px-4 py-2 rounded text-sm font-medium hover:bg-[#f40612] transition"
               >
                 Sign In
               </button>
             )}
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="absolute top-16 left-0 w-64 bg-black/95 h-screen border-r border-gray-800 animate-fade-in lg:hidden flex flex-col pt-4 px-4 gap-6 z-[90]">
+              <ul className="flex flex-col gap-6 text-lg font-medium text-gray-300">
+                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.BROWSE ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.BROWSE; }}>Home</li>
+                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.TV_SHOWS ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.TV_SHOWS; }}>TV Shows</li>
+                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.MOVIES ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MOVIES; }}>Movies</li>
+                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.NEW_POPULAR ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.NEW_POPULAR; }}>New & Popular</li>
+                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.MY_LIST ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MY_LIST; }}>My List</li>
+              </ul>
+            </div>
+          )}
         </nav>
       )}
       <main>
         {children}
       </main>
+      <Footer />
     </div>
   );
 };

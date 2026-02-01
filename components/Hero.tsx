@@ -54,7 +54,7 @@ export const Hero: React.FC = () => {
       playerRef.current = new YT.Player(containerRef.current, {
         videoId: movie.youtubeId,
         playerVars: {
-          autoplay: 1,
+          autoplay: 0, // Disable autoplay
           mute: 1,
           playsinline: 1,
           controls: 0,
@@ -69,47 +69,24 @@ export const Hero: React.FC = () => {
         },
         events: {
           onReady: (e: any) => {
-            // Aggressive muting
+            // Just mute, don't play
             try {
               e.target.mute();
               e.target.setVolume(0);
             } catch { }
-
-            // Immediate play with retries
-            const attemptPlay = (attempts = 0) => {
-              if (attempts > 10) {
-                // Show subtle play button after failed autoplay
-                setTimeout(() => setShowPlayButton(true), 1000);
-                return;
-              }
-              try {
-                e.target.playVideo();
-                setTimeout(() => {
-                  const state = e.target.getPlayerState();
-                  if (state !== 1) {
-                    attemptPlay(attempts + 1);
-                  } else {
-                    setShowPlayButton(false); // Hide if playing
-                  }
-                }, 200); // Faster retries
-              } catch {
-                setTimeout(() => attemptPlay(attempts + 1), 200);
-              }
-            };
-
-            attemptPlay();
             setMaxQuality(e.target);
+            setShowPlayButton(true); // Always show play button
           },
           onStateChange: (ev: any) => {
             try {
               const state = ev?.data;
               if (state === YT.PlayerState.PLAYING) {
                 setVideoLoaded(true);
+                setShowPlayButton(false); // Hide button when playing
               }
-              // Restart video when it ends to ensure continuous loop
+              // Restart video when it ends
               if (state === YT.PlayerState.ENDED) {
                 try {
-                  ev.target.seekTo(10); // Start from 10 seconds
                   ev.target.playVideo();
                 } catch { }
               }
@@ -121,44 +98,7 @@ export const Hero: React.FC = () => {
 
     initPlayer();
 
-    // Additional trigger: Try to play when window gains focus
-    const handleFocus = () => {
-      if (playerRef.current) {
-        setTimeout(() => {
-          try {
-            playerRef.current.playVideo();
-          } catch { }
-        }, 100);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-
-    // Intersection Observer: Play when hero is visible
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && playerRef.current) {
-            setTimeout(() => {
-              try {
-                playerRef.current.playVideo();
-              } catch { }
-            }, 500);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch { }
         playerRef.current = null;
@@ -186,8 +126,8 @@ export const Hero: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
 
-      {/* Subtle Play Button - Only shows if autoplay fails */}
-      {showPlayButton && !videoLoaded && (
+      {/* Play Button - Always visible until user plays */}
+      {showPlayButton && (
         <div
           className="absolute inset-0 flex items-center justify-center cursor-pointer group/play animate-in fade-in duration-1000"
           onClick={() => {

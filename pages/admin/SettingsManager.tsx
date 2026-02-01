@@ -64,24 +64,7 @@ export const SettingsManager: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="bg-red-900/20 rounded-lg border border-red-900/50 p-6">
-                    <h3 className="font-bold mb-4 flex items-center gap-2 text-red-500"><Database size={20} /> Developer Zone (Quick Actions)</h3>
-                    <p className="text-sm text-gray-400 mb-4">
-                        Manage your database content. Use these tools to populate or reset your site.
-                    </p>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={async () => {
-                                const { clearDatabase } = await import('../../services/contentService');
-                                await clearDatabase();
-                                window.location.reload();
-                            }}
-                            className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded font-medium disabled:opacity-50"
-                        >
-                            Reset Database
-                        </button>
-                    </div>
-                </div>
+
 
             </div>
         </AdminLayout>

@@ -13,16 +13,33 @@ import { Login } from './pages/Login';
 import { Account } from './pages/Account';
 import { InfoPage } from './pages/InfoPage';
 import { AppRoute } from './types';
+import { Offline } from './components/Offline';
 
 const Router: React.FC = () => {
   const { user, currentProfile, isLoading } = useStore();
   const [currentHash, setCurrentHash] = useState(window.location.hash);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash);
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    }
   }, []);
+
+  if (isOffline) {
+    return <Offline />;
+  }
 
   // Admin Routes (Simple protection)
   if (currentHash.startsWith('#/admin')) {

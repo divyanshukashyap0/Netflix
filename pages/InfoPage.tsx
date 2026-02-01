@@ -1,9 +1,17 @@
 import React from 'react';
 import { AppRoute } from '../types';
+import { useStore } from '../context/Store';
 
 export const InfoPage: React.FC = () => {
+  const { user } = useStore();
   const hash = window.location.hash.replace('#', '');
   const path = hash.startsWith('/') ? hash : `/${hash}`;
+  // ... (renderContent code remains mostly same, just updating the header logic in return part below)
+
+  // NOTE: Instead of replacing the whole file, I will just apply the change to imports and the header section safely.
+  // Wait, the previous replacement text was too generic. I need to be precise.
+  // I will split this into two calls: one for imports and state, one for the header JSX.
+
 
   const renderContent = (path: string) => {
     switch (path) {
@@ -408,10 +416,10 @@ export const InfoPage: React.FC = () => {
           onClick={() => window.location.hash = AppRoute.LANDING}
         />
         <button
-          onClick={() => window.location.hash = AppRoute.LOGIN}
+          onClick={() => window.location.hash = user ? AppRoute.BROWSE : AppRoute.LOGIN}
           className="text-[#e50914] font-bold hover:underline text-sm uppercase"
         >
-          Sign In
+          {user ? 'Home' : 'Sign In'}
         </button>
       </div>
 

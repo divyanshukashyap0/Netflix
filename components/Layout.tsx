@@ -3,6 +3,8 @@ import { useStore } from '../context/Store';
 import { AppRoute } from '../types';
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
 import { Footer } from './Footer';
+import { MobileNav } from './MobileNav';
+import { PWAInstall } from './PWAInstall';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,16 +32,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white">
+    <div className="min-h-screen bg-[#141414] text-white padding-bottom-safe">
       {showNav && (
         <nav
           className={`fixed w-full z-[100] transition-colors duration-500 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled || mobileMenuOpen ? 'bg-[#141414]' : 'bg-gradient-to-b from-black/80 to-transparent'
             }`}
         >
           <div className="flex items-center gap-4 md:gap-8">
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle (Keep for now, but MobileNav is primary) */}
             {user && (
-              <div className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <div className="lg:hidden md:block hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X className="w-6 h-6 cursor-pointer" /> : <Menu className="w-6 h-6 cursor-pointer" />}
               </div>
             )}
@@ -64,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
           <div className="flex items-center gap-2 md:gap-6">
             {user ? (
               <>
-                <form onSubmit={handleSearchSubmit} className={`flex items-center border border-white/0 ${searchOpen ? 'border-white/100 bg-black/80' : ''} transition-all duration-300 p-1`}>
+                <form onSubmit={handleSearchSubmit} className={`hidden md:flex items-center border border-white/0 ${searchOpen ? 'border-white/100 bg-black/80' : ''} transition-all duration-300 p-1`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -152,24 +154,25 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
             )}
           </div>
 
-          {/* Mobile Menu Dropdown */}
+          {/* Mobile Menu Dropdown (Keep for overflow items if needed) */}
           {mobileMenuOpen && (
             <div className="absolute top-16 left-0 w-64 bg-black/95 h-screen border-r border-gray-800 animate-fade-in lg:hidden flex flex-col pt-4 px-4 gap-6 z-[90]">
               <ul className="flex flex-col gap-6 text-lg font-medium text-gray-300">
-                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.BROWSE ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.BROWSE; }}>Home</li>
-                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.TV_SHOWS ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.TV_SHOWS; }}>TV Shows</li>
-                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.MOVIES ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MOVIES; }}>Movies</li>
-                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.NEW_POPULAR ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.NEW_POPULAR; }}>New & Popular</li>
-                <li className={`cursor-pointer transition ${window.location.hash === '#' + AppRoute.MY_LIST ? 'text-white font-bold pl-2 border-l-4 border-[#e50914]' : 'hover:text-white'}`} onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MY_LIST; }}>My List</li>
+                {/* Replaced by Bottom Nav mainly, but keeping specific items */}
+                <li className="hover:text-white cursor-pointer" onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MY_LIST; }}>My List</li>
+                <li className="hover:text-white cursor-pointer" onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.ACCOUNT; }}>Account</li>
+                <li className="hover:text-white cursor-pointer" onClick={() => { logout(); window.location.hash = AppRoute.LANDING; }}>Sign Out</li>
               </ul>
             </div>
           )}
         </nav>
       )}
-      <main>
+      <main className="pb-16 lg:pb-0">
         {children}
       </main>
       <Footer />
+      <MobileNav user={user} />
+      <PWAInstall />
     </div>
   );
 };

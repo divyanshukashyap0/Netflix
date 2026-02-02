@@ -39,14 +39,14 @@ export const getSections = async (scope?: 'home' | 'tv' | 'movie' | 'new'): Prom
     const sections = snap.docs.map(d => ({ id: d.id, ...d.data() } as Section));
 
     return sections
-      .filter(s => s.enabled === true)
+      .filter(s => s.enabled !== false) // Treat undefined or true as enabled
       .filter(s => {
         if (!scope) return true;
         const target = scope;
         const sScope = s.scope || 'home';
         return sScope === target;
       })
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   } catch (e) {
     console.error("Error fetching sections:", e);
     return [];

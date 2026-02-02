@@ -57,15 +57,34 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
   };
 
   const handleAudioTrackChange = (trackId: string) => {
-    if (playerRef.current && playerRef.current.setOption) {
-      try {
+    if (!playerRef.current) return;
+
+    try {
+      // YouTube uses 'captions' for subtitles/tracks
+      if (playerRef.current.setOption) {
         playerRef.current.setOption('captions', 'track', { languageCode: trackId });
-        setCurrentAudioTrack(trackId);
-        setShowAudioMenu(false);
-      } catch (e) {
-        console.error('Failed to change audio track:', e);
+      } else if (playerRef.current.loadModule) {
+        playerRef.current.loadModule('captions');
+        playerRef.current.setOption('captions', 'track', { languageCode: trackId });
       }
+
+      setCurrentAudioTrack(trackId);
+      setShowAudioMenu(false);
+    } catch (e) {
+      console.error('Failed to change audio/caption track:', e);
     }
+  };
+
+  const handleSubtitleToggle = (off: boolean) => {
+    if (!playerRef.current) return;
+    try {
+      if (off) {
+        playerRef.current.unloadModule('captions');
+      } else {
+        playerRef.current.loadModule('captions');
+      }
+      setShowAudioMenu(false);
+    } catch (e) { }
   };
 
   useEffect(() => {
@@ -205,19 +224,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
                 <ArrowLeft size={20} /> Back
               </button>
 
-              {/* Audio Language Selector - Repositioned for visibility */}
-              <div className="absolute bottom-4 right-4 z-30">
+              {/* Audio & Subtitles Controls - Moved to top-right to avoid YouTube UX clash */}
+              <div className="absolute top-16 right-4 z-[60]">
                 <div className="relative">
                   <button
                     onClick={() => setShowAudioMenu(!showAudioMenu)}
-                    className="bg-black/70 px-3 py-2 rounded hover:bg-black/90 text-white flex items-center gap-2 text-xs md:text-sm font-medium backdrop-blur-sm"
+                    className="bg-black/80 p-2 md:p-3 rounded-full hover:bg-white hover:text-black transition-all text-white flex items-center justify-center shadow-lg border border-white/20 backdrop-blur-md group"
+                    title="Audio & Subtitles"
                   >
-                    <svg className="w-3 h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 17v-2m3 2v-4m3 4v-6m2 10V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z" />
                     </svg>
-                    <span className="hidden sm:inline">Audio & Subtitles</span>
-                    <span className="sm:hidden">A/S</span>
                   </button>
 
                   {showAudioMenu && (
@@ -241,7 +258,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
                         <div className="border-t border-gray-700 pt-3">
                           <h4 className="text-xs md:text-sm font-bold mb-2 text-gray-300 uppercase tracking-wide">Subtitles</h4>
                           <div className="space-y-1">
-                            <button className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300">
+                            <button
+                              onClick={() => handleSubtitleToggle(true)}
+                              className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300"
+                            >
                               Off
                             </button>
                             {['English', 'Hindi', 'Spanish'].map((lang) => (

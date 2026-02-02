@@ -8,7 +8,7 @@ import { Modal } from '../components/Modal';
 export const Search: React.FC = () => {
     const { searchQuery } = useStore();
     const [results, setResults] = useState<Content[]>([]);
-    const [selectedMovie, setSelectedMovie] = useState<Content | null>(null);
+    const [modalConfig, setModalConfig] = useState<{ movie: Content; autoPlay: boolean } | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -49,7 +49,7 @@ export const Search: React.FC = () => {
                         <div
                             key={movie.id}
                             className="relative aspect-video bg-[#2f2f2f] rounded cursor-pointer group overflow-hidden"
-                            onClick={() => setSelectedMovie(movie)}
+                            onClick={() => setModalConfig({ movie, autoPlay: false })}
                         >
                             <img
                                 src={movie.backdrop_path || movie.poster_path || 'https://via.placeholder.com/300x170'}
@@ -74,11 +74,12 @@ export const Search: React.FC = () => {
                     </div>
                 )}
             </div>
-            {selectedMovie && (
+            {modalConfig && (
                 <Modal
-                    movie={selectedMovie}
-                    onClose={() => setSelectedMovie(null)}
-                    onSwitchMovie={(movie) => setSelectedMovie(movie)}
+                    movie={modalConfig.movie}
+                    autoPlay={modalConfig.autoPlay}
+                    onClose={() => setModalConfig(null)}
+                    onSwitchMovie={(movie) => setModalConfig({ movie, autoPlay: true })}
                 />
             )}
         </Layout>

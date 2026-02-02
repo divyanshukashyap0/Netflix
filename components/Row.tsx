@@ -91,6 +91,7 @@ export const Row: React.FC<RowProps> = ({ section, isLarge }) => {
           movie={modalConfig.movie}
           autoPlay={modalConfig.autoPlay}
           onClose={() => setModalConfig(null)}
+          onSwitchMovie={(movie) => setModalConfig({ movie, autoPlay: true })}
         />
       )}
     </div>

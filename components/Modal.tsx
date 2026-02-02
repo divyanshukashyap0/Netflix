@@ -23,9 +23,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Reset playing state when movie changes
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  // Reset playing state and scroll to top when movie changes
   useEffect(() => {
     setIsPlaying(autoPlay);
+    // Scroll to top of modal for visibility of video
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [movie.id, autoPlay]);
 
   useEffect(() => {
@@ -129,6 +135,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
   return (
     <div
+      ref={scrollerRef}
       className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-4 md:py-8 animate-in fade-in duration-300"
       onClick={onClose}
     >

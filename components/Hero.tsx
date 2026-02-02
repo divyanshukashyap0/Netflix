@@ -11,7 +11,41 @@ export const Hero: React.FC = () => {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [videoQuality, setVideoQuality] = useState<string>('hd1080');
+  const [isSlowNetwork, setIsSlowNetwork] = useState(false);
+  const [networkCheckVersion, setNetworkCheckVersion] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Connection speed detection and 1-minute retry logic
+  useEffect(() => {
+    const checkSpeed = async () => {
+      const connection = (navigator as any).connection;
+      let slow = false;
+
+      if (connection) {
+        // downlink < 2 Mbps or 2g/3g is considered slow for 1080p/4K autoplay
+        if (connection.downlink < 2 || ['2g', '3g'].includes(connection.effectiveType)) {
+          slow = true;
+        }
+      }
+
+      if (slow) {
+        setIsSlowNetwork(true);
+        setShowVideo(false);
+        setVideoLoaded(false);
+        console.log("Slow network detected. Autoplay disabled for 1 minute.");
+
+        // Wait 1 minute then trigger re-check
+        setTimeout(() => {
+          setNetworkCheckVersion(v => v + 1);
+        }, 60000);
+      } else {
+        setIsSlowNetwork(false);
+        console.log("Good network detected. Enabling autoplay.");
+      }
+    };
+
+    checkSpeed();
+  }, [networkCheckVersion]);
 
   useEffect(() => {
     const loadHero = async () => {
@@ -38,23 +72,27 @@ export const Hero: React.FC = () => {
     }
   }, [isMuted, videoLoaded]);
 
-  // Start video after 5 second delay for better UX
+  // Start video after 5 second delay (gated by network speed)
   const [showVideo, setShowVideo] = useState(false);
   useEffect(() => {
-    if (movie?.youtubeId) {
+    if (movie?.youtubeId && !isSlowNetwork) {
       const showTimer = setTimeout(() => setShowVideo(true), 5000); // 5 second delay
       const loadTimer = setTimeout(() => setVideoLoaded(true), 7000); // Mark as loaded after 7s
       return () => {
         clearTimeout(showTimer);
         clearTimeout(loadTimer);
       };
+    } else {
+      setShowVideo(false);
+      setVideoLoaded(false);
     }
-  }, [movie?.youtubeId]);
+  }, [movie?.youtubeId, isSlowNetwork]);
 
   if (!movie) return <div className="h-[70vh] md:h-[56.25vw] bg-[#141414] animate-pulse flex items-center justify-center text-gray-700">Loading Preview...</div>;
 
-  // Build YouTube embed URL with quality parameter
-  const qualityParam = videoQuality !== 'auto' ? `&vq=${videoQuality}` : '';
+  // Build YouTube embed URL with quality parameter (requests max quality based on settings)
+  const finalQuality = videoQuality === 'highres' ? 'highres' : videoQuality;
+  const qualityParam = finalQuality !== 'auto' ? `&vq=${finalQuality}` : '&vq=hd1080';
   const youtubeEmbedUrl = movie.youtubeId
     ? `https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${movie.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=10&enablejsapi=1&origin=${window.location.origin}${qualityParam}`
     : null;

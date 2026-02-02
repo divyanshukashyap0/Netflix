@@ -22,8 +22,8 @@ export const ContentManager: React.FC = () => {
     const snapContent = await getDocs(qContent);
     setContents(snapContent.docs.map(d => ({ id: d.id, ...d.data() } as Content)));
 
-    // Fetch Curated Sections
-    const qSections = query(collection(db, 'sections'), where('type', '==', 'curated'));
+    // Fetch All Sections (for manual content assignment)
+    const qSections = query(collection(db, 'sections'), orderBy('title'));
     const snapSections = await getDocs(qSections);
     setSections(snapSections.docs.map(d => ({ id: d.id, ...d.data() } as Section)));
 
@@ -210,7 +210,7 @@ export const ContentManager: React.FC = () => {
               {/* Sections Selector */}
               {sections.length > 0 && (
                 <div className="bg-[#2a2a2a] p-4 rounded border border-gray-700">
-                  <label className="block text-sm text-gray-400 mb-2 font-bold">Add to Curated Sections</label>
+                  <label className="block text-sm text-gray-400 mb-2 font-bold">Assign to Sections</label>
                   <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
                     {sections.map(section => (
                       <div key={section.id} className="flex items-center gap-2">

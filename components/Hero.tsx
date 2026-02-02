@@ -153,8 +153,8 @@ export const Hero: React.FC = () => {
       )}
 
       {/* Content */}
-      <div className="absolute top-[25%] md:top-[30%] left-4 md:left-12 max-w-xl space-y-4 md:space-y-6 z-10 w-full pr-4">
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold drop-shadow-xl text-white tracking-tighter leading-tight">
+      <div className="absolute top-[15%] md:top-[20%] left-4 md:left-12 max-w-2xl space-y-4 md:space-y-6 z-10 w-full pr-4">
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold drop-shadow-xl text-white tracking-tighter leading-tight">
           {movie.title}
         </h1>
         <div className="flex items-center gap-3 text-white font-semibold drop-shadow-md text-lg">

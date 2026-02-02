@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Movie } from '../types';
 import { useStore } from '../context/Store';
 import { getImage } from '../services/tmdb';
-import { getContentBySection } from '../services/contentService';
+import { getContentBySection, getSiteSettings } from '../services/contentService';
 import { X, Play, Plus, Check, ThumbsUp, ArrowLeft } from 'lucide-react';
 
 interface ModalProps {
@@ -81,12 +81,22 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
         }
       });
 
-    const setMaxQuality = (player: any) => {
+    const setMaxQuality = async (player: any) => {
       if (!player || !player.getAvailableQualityLevels) return;
+
+      const settings = await getSiteSettings();
+      const preferred = (settings.heroVideoQuality as any) || 'hd1080';
+
       const levels: string[] = player.getAvailableQualityLevels() || [];
       const order = ['highres', 'hd1080', 'hd720', 'large', 'medium', 'small'];
-      const best = order.find(q => levels.includes(q)) || 'highres';
-      if (player.setPlaybackQuality) player.setPlaybackQuality(best);
+
+      // If preferred is in levels, use it. Otherwise fallback to best.
+      let finalQuality = preferred;
+      if (!levels.includes(preferred)) {
+        finalQuality = order.find(q => levels.includes(q)) || 'highres';
+      }
+
+      if (player.setPlaybackQuality) player.setPlaybackQuality(finalQuality);
     };
 
     const initPlayer = async () => {

@@ -22,8 +22,9 @@ export const Hero: React.FC = () => {
       let slow = false;
 
       if (connection) {
-        // downlink < 2 Mbps or 2g/3g is considered slow for 1080p/4K autoplay
-        if (connection.downlink < 2 || ['2g', '3g'].includes(connection.effectiveType)) {
+        // downlink < 5 Mbps or 2g/3g is considered slow for 1080p/4K autoplay
+        // Increased threshold to 5Mbps to ensure YouTube doesn't default to 480p
+        if (connection.downlink < 5 || ['2g', '3g'].includes(connection.effectiveType)) {
           slow = true;
         }
       }
@@ -61,16 +62,26 @@ export const Hero: React.FC = () => {
     loadHero();
   }, []);
 
-  // YouTube postMessage API for mute control
+  // YouTube postMessage API for mute and quality control
   useEffect(() => {
     if (iframeRef.current && videoLoaded) {
-      const command = isMuted ? 'mute' : 'unMute';
+      // Mute Control
+      const muteCommand = isMuted ? 'mute' : 'unMute';
       iframeRef.current.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: command }),
+        JSON.stringify({ event: 'command', func: muteCommand }),
         '*'
       );
+
+      // Aggressive Quality Control
+      if (videoQuality !== 'auto') {
+        const qualityVal = videoQuality === 'highres' ? 'highres' : videoQuality;
+        iframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: [qualityVal] }),
+          '*'
+        );
+      }
     }
-  }, [isMuted, videoLoaded]);
+  }, [isMuted, videoLoaded, videoQuality]);
 
   // Start video after 5 second delay (gated by network speed)
   const [showVideo, setShowVideo] = useState(false);

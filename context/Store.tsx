@@ -10,6 +10,7 @@ interface StoreContextType {
   profiles: Profile[];
   currentProfile: Profile | null;
   selectProfile: (profileId: string) => void;
+  updateProfile: (profileId: string, data: Partial<Profile>) => Promise<void>;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
@@ -54,14 +55,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           dbRole = (firebaseUser.email?.includes('admin')) ? 'admin' : 'user';
         }
 
-        const mappedUser: User = {
+        const mappedUser: User & { photoURL?: string } = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || '',
           plan: userPlan,
           subscriptionStatus: subscriptionStatus,
-          role: dbRole
+          role: dbRole,
+          photoURL: firebaseUser.photoURL || undefined
         };
-        setUser(mappedUser);
+        setUser(mappedUser as any);
 
         // Sync user to Firestore (will create if missing, or update basic fields)
         await syncUser(mappedUser);
@@ -235,6 +237,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       profiles,
       currentProfile,
       selectProfile,
+      updateProfile: async (id, data) => {
+        if (!user) return;
+        await updateProfileService(user.uid, id, data);
+        await refreshProfile();
+        // and update profiles list
+        const updated = await getProfiles(user.uid);
+        setProfiles(updated);
+      },
       isLoading,
       login,
       loginWithGoogle,

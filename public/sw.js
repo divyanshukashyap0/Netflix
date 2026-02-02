@@ -5,7 +5,6 @@ const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/index.css',
-    '/logoN.png',
     '/favicon.png',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap',
     'https://cdn.tailwindcss.com'
@@ -69,7 +68,7 @@ self.addEventListener('fetch', (event) => {
                 if (!response || response.status !== 200 || response.type !== 'basic') {
                     return response;
                 }
-                const responseToCache = response.();
+                const responseToCache = response.clone();
                 caches.open(DYNAMIC_CACHE).then((cache) => {
                     cache.put(event.request, responseToCache);
                 });

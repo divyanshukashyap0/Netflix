@@ -9,23 +9,23 @@
     "orientation": "portrait",
     "icons": [
         {
-            "src": "/logoN.png",
+            "src": "/favicon.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/logoN.png",
+            "src": "/favicon.png",
             "sizes": "512x512",
             "type": "image/png"
         },
         {
-            "src": "/logoN.png",
+            "src": "/favicon.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
-            "src": "/logoN.png",
+            "src": "/favicon.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"

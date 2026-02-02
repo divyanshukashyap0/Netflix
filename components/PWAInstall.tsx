@@ -62,7 +62,7 @@ export const PWAInstall: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-4">
-                    <img src="/logoN.png" alt="Netflix" className="w-12 h-12 rounded object-cover bg-black" />
+                    <img src="/favicon.png" alt="Netflix" className="w-12 h-12 rounded object-cover bg-black" />
                     <div>
                         <h3 className="font-bold text-white text-sm">Install App for Best Experience</h3>
                         <p className="text-xs text-gray-400">Faster access, fullscreen & offline capable.</p>

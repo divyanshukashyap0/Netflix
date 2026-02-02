@@ -81,12 +81,20 @@ export const getContentBySection = async (section: Section): Promise<Content[]> 
 };
 
 export const searchContent = async (text: string): Promise<Content[]> => {
-  // Basic client-side search since Firestore full-text search requires Algolia/Elastic
-  // In production, use a dedicated search service.
+  // Client-side search matching title, overview, genres, cast, and tags
   const q = query(collection(db, 'content'), limit(100));
   const snap = await getDocs(q);
   const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as Content));
-  return all.filter(c => c.title.toLowerCase().includes(text.toLowerCase()));
+  const searchLower = text.toLowerCase();
+
+  return all.filter(c => {
+    const titleMatch = c.title?.toLowerCase().includes(searchLower);
+    const overviewMatch = c.overview?.toLowerCase().includes(searchLower);
+    const genreMatch = c.genres?.some(g => g.toLowerCase().includes(searchLower));
+    const castMatch = c.cast?.some(a => a.toLowerCase().includes(searchLower));
+    const tagMatch = c.tags?.some(t => t.toLowerCase().includes(searchLower));
+    return titleMatch || overviewMatch || genreMatch || castMatch || tagMatch;
+  });
 }
 
 

@@ -1,25 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { useStore } from '../context/Store';
-import { searchMovies, getImage } from '../services/tmdb';
-import { Movie } from '../types';
+import { searchContent } from '../services/contentService';
+import { Content } from '../types';
 import { Modal } from '../components/Modal';
 
 export const Search: React.FC = () => {
     const { searchQuery } = useStore();
-    const [results, setResults] = useState<Movie[]>([]);
-    const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+    const [results, setResults] = useState<Content[]>([]);
+    const [selectedMovie, setSelectedMovie] = useState<Content | null>(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchResults = async () => {
-            if (searchQuery.length > 2) {
-                const res = await searchMovies(searchQuery);
-                setResults(res);
+            if (searchQuery.length > 1) {
+                setLoading(true);
+                try {
+                    const res = await searchContent(searchQuery);
+                    setResults(res);
+                } catch (e) {
+                    console.error("Search error:", e);
+                    setResults([]);
+                }
+                setLoading(false);
             } else {
                 setResults([]);
             }
         };
-        const debounce = setTimeout(fetchResults, 500);
+        const debounce = setTimeout(fetchResults, 300);
         return () => clearTimeout(debounce);
     }, [searchQuery]);
 
@@ -30,6 +38,12 @@ export const Search: React.FC = () => {
                     {searchQuery ? `Results for "${searchQuery}"` : "Start typing to search..."}
                 </h2>
 
+                {loading && (
+                    <div className="flex justify-center py-10">
+                        <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {results.map(movie => (
                         <div
@@ -38,7 +52,7 @@ export const Search: React.FC = () => {
                             onClick={() => setSelectedMovie(movie)}
                         >
                             <img
-                                src={getImage(movie.backdrop_path)}
+                                src={movie.backdrop_path || movie.poster_path || 'https://via.placeholder.com/300x170'}
                                 alt={movie.title}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
@@ -48,14 +62,14 @@ export const Search: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                {results.length === 0 && searchQuery && (
+                {!loading && results.length === 0 && searchQuery && searchQuery.length > 1 && (
                     <div className="text-center mt-20 text-gray-500">
                         <p>Your search for "{searchQuery}" did not have any matches.</p>
                         <p className="mt-2">Suggestions:</p>
                         <ul className="list-disc list-inside mt-2">
                             <li>Try different keywords</li>
-                            <li>Looking for a movie or TV show?</li>
-                            <li>Try using a movie, TV show title, or an actor</li>
+                            <li>Check the spelling</li>
+                            <li>Try using a movie or TV show title</li>
                         </ul>
                     </div>
                 )}

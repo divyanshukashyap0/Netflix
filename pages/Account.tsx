@@ -11,10 +11,10 @@ declare const Razorpay: any;
 
 const AVATARS = [
     'https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png',
-    'https://i.pinimg.com/736x/c5/21/64/c52164749f7460c1ededf89e80b2639d.jpg',
+    'https://img.freepik.com/premium-vector/funny-green-face-square-avatar-cartoon-emotion-icon_53562-16129.jpg',
     'https://i.pinimg.com/736x/b6/77/cd/b677cd1cde292f261166533d6fe75872.jpg',
-    'https://i.pinimg.com/736x/26/dd/9e/26dd9e2d49e3d8fdc2b29156641e7371.jpg',
-    'https://i.pinimg.com/736x/bd/ee/4c/bdee4c328550df2125177d22033bf545.jpg'
+    'https://mir-s3-cdn-cf.behance.net/project_modules/disp/84c20033850498.56ba69ac290ea.png',
+    'https://i.pinimg.com/474x/fb/8e/8a/fb8e8a96fca2f049334f312086a6e2f6--vini-cata.jpg'
 ];
 
 export const Account: React.FC = () => {

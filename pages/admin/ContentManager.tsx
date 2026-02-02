@@ -3,7 +3,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { db } from '../../lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query, where, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
-import { Content, Section } from '../../types';
+import { Content, Section, AppRoute } from '../../types';
 import { Pencil, Trash2, Plus, X, Star } from 'lucide-react';
 
 export const ContentManager: React.FC = () => {
@@ -98,6 +98,19 @@ export const ContentManager: React.FC = () => {
       setEditingId(null);
       reset();
       fetchData(); // Refresh both content and sections data
+
+      // Send Global Notification for new content
+      if (!editingId) {
+        await addDoc(collection(db, 'notifications'), {
+          title: 'New Content Added',
+          message: `Check out our newest addition: ${formattedData.title}`,
+          image: formattedData.backdrop_path || formattedData.poster_path,
+          type: 'content',
+          link: `#${AppRoute.BROWSE}`, // Or link to specific content if route exists
+          createdAt: new Date().toISOString(),
+          read: false
+        });
+      }
     } catch (e: any) {
       alert("Error saving content: " + e.message);
     }

@@ -3,7 +3,7 @@ import { Movie } from '../types';
 import { useStore } from '../context/Store';
 import { getImage } from '../services/tmdb';
 import { getContentBySection, getSiteSettings } from '../services/contentService';
-import { X, Play, Plus, Check, ThumbsUp, ArrowLeft } from 'lucide-react';
+import { X, Play, Plus, Check, ThumbsUp, ArrowLeft, MessageSquare } from 'lucide-react';
 
 interface ModalProps {
   movie: Movie;
@@ -224,17 +224,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
                 <ArrowLeft size={20} /> Back
               </button>
 
-              {/* Audio & Subtitles Controls - Moved to top-right to avoid YouTube UX clash */}
-              <div className="absolute top-16 right-4 z-[60]">
+              {/* Audio & Subtitles Controls - Positioned at bottom-right but above YT controls */}
+              <div className="absolute bottom-16 right-4 z-[60]">
                 <div className="relative">
                   <button
                     onClick={() => setShowAudioMenu(!showAudioMenu)}
-                    className="bg-black/80 p-2 md:p-3 rounded-full hover:bg-white hover:text-black transition-all text-white flex items-center justify-center shadow-lg border border-white/20 backdrop-blur-md group"
+                    className="bg-black/60 p-2 md:p-3 rounded-full hover:bg-white/20 transition-all text-white flex items-center justify-center shadow-lg border border-white/20 backdrop-blur-md group"
                     title="Audio & Subtitles"
                   >
-                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 17v-2m3 2v-4m3 4v-6m2 10V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z" />
-                    </svg>
+                    <MessageSquare size={20} className="md:w-6 md:h-6" />
                   </button>
 
                   {showAudioMenu && (

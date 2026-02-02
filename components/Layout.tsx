@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store';
-import { AppRoute } from '../types';
-import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
+import { AppRoute, Notification as AppNotification } from '../types';
+import { Search, Bell, ChevronDown, Menu, X, Trash2 } from 'lucide-react';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { PWAInstall } from './PWAInstall';
+import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,8 +17,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
   const { user, logout, currentProfile, profiles, selectProfile, searchQuery, setSearchQuery } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [hasNewNotif, setHasNewNotif] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +30,47 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Notifications Listener
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(5));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AppNotification));
+      setNotifications(notifs);
+
+      // Check for unread
+      const unread = notifs.some(n => !n.read);
+      setHasNewNotif(unread);
+
+      // Trigger Browser Notification for newest if it just arrived
+      const newest = notifs[0];
+      if (newest && !newest.read && newest.createdAt > new Date(Date.now() - 10000).toISOString()) {
+        showBrowserNotification(newest);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const showBrowserNotification = (notif: AppNotification) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(notif.title, {
+        body: notif.message,
+        icon: notif.image || '/favicon.png'
+      });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  };
+
+  const markAllRead = async () => {
+    const unread = notifications.filter(n => !n.read);
+    const promises = unread.map(n => updateDoc(doc(db, 'notifications', n.id), { read: true }));
+    await Promise.all(promises);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +133,42 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
                   />
                 </form>
 
-                <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 hidden md:block" />
+                <div className="relative">
+                  <Bell
+                    className="w-6 h-6 cursor-pointer hover:text-gray-300 hidden md:block"
+                    onClick={() => { setShowNotifMenu(!showNotifMenu); if (!showNotifMenu) markAllRead(); }}
+                  />
+                  {hasNewNotif && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-black hidden md:block"></span>
+                  )}
+
+                  {showNotifMenu && (
+                    <div className="absolute right-0 mt-4 w-80 bg-black/95 border border-gray-700 rounded-lg shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                      <div className="px-4 py-2 border-b border-gray-800 flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Notifications</span>
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto">
+                        {notifications.length > 0 ? (
+                          notifications.map(n => (
+                            <div key={n.id} className="p-4 hover:bg-white/5 transition flex gap-3 border-b border-gray-800 last:border-0 group">
+                              {n.image && <img src={n.image} className="w-16 h-10 object-cover rounded" alt="" />}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-white line-clamp-1">{n.title}</p>
+                                <p className="text-xs text-gray-400 line-clamp-2 mt-0.5">{n.message}</p>
+                                <p className="text-[10px] text-gray-500 mt-2">{new Date(n.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              {!n.read && <div className="w-2 h-2 bg-red-600 rounded-full shrink-0 self-center"></div>}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-10 text-center text-gray-500 text-sm">
+                            No new notifications
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="relative group">
                   <div

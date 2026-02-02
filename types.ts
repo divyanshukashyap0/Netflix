@@ -16,6 +16,17 @@ export interface Content {
   comingSoon?: boolean;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  image?: string;
+  type: 'content' | 'system';
+  link?: string;
+  createdAt: string;
+  read?: boolean;
+}
+
 export interface Section {
   id: string;
   // (omitting untouched lines in replacement content to safe space if possible, but tool requires valid replacement) 
@@ -29,7 +40,7 @@ export interface Section {
   genreFilter?: string; // If type is genre
   contentIds?: string[]; // If type is curated
   enabled: boolean;
-  scope?: 'home' | 'tv' | 'movie' | 'new'; // Route where section appears
+  scopes: ('home' | 'tv' | 'movie' | 'new')[]; // Routes where section appears
 }
 
 export interface SiteSettings {

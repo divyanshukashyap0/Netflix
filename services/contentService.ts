@@ -43,8 +43,9 @@ export const getSections = async (scope?: 'home' | 'tv' | 'movie' | 'new'): Prom
       .filter(s => {
         if (!scope) return true;
         const target = scope;
-        const sScope = s.scope || 'home';
-        return sScope === target;
+        // Support both old 'scope' and new 'scopes' array
+        const sScopes = s.scopes || [(s as any).scope || 'home'];
+        return sScopes.includes(target);
       })
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   } catch (e) {
@@ -73,7 +74,7 @@ export const getContentBySection = async (section: Section): Promise<Content[]> 
     }
 
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Content));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Content));
   } catch (e) {
     console.error(`Error fetching section ${section.title}`, e);
     return [];

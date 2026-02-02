@@ -11,7 +11,7 @@ export const SectionManager: React.FC = () => {
     const [title, setTitle] = useState('');
     const [type, setType] = useState('genre');
     const [filter, setFilter] = useState('');
-    const [scope, setScope] = useState<'home' | 'tv' | 'movie' | 'new'>('home');
+    const [scopes, setScopes] = useState<('home' | 'tv' | 'movie' | 'new')[]>(['home']);
 
     // Edit State
     const [isEditing, setIsEditing] = useState(false);
@@ -27,11 +27,16 @@ export const SectionManager: React.FC = () => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (scopes.length === 0) {
+            alert("Please select at least one page.");
+            return;
+        }
+
         const data = {
             title,
             type: type as any,
             genreFilter: filter,
-            scope,
+            scopes,
             enabled: true
         };
 
@@ -58,7 +63,7 @@ export const SectionManager: React.FC = () => {
         setTitle(section.title);
         setType(section.type);
         setFilter(section.genreFilter || '');
-        setScope(section.scope || 'home');
+        setScopes(section.scopes || [(section as any).scope || 'home']);
         // Scroll to top or form
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -75,8 +80,21 @@ export const SectionManager: React.FC = () => {
         setTitle('');
         setType('genre');
         setFilter('');
-        setScope('home');
+        setScopes(['home']);
     };
+
+    const handleScopeToggle = (s: any) => {
+        setScopes(prev =>
+            prev.includes(s) ? prev.filter(item => item !== s) : [...prev, s]
+        );
+    };
+
+    const availableScopes = [
+        { id: 'home', label: 'Home' },
+        { id: 'tv', label: 'TV Shows' },
+        { id: 'movie', label: 'Movies' },
+        { id: 'new', label: 'New & Popular' }
+    ];
 
     return (
         <AdminLayout title="Homepage Layout">
@@ -96,7 +114,9 @@ export const SectionManager: React.FC = () => {
                                         <div>
                                             <div className="font-bold">{s.title}</div>
                                             <div className="text-xs text-gray-400 capitalize">
-                                                {s.type} {s.genreFilter && `(${s.genreFilter})`} • <span className="uppercase text-[#e50914]">{(s.scope || 'home').replace('new', 'New & Popular')}</span>
+                                                {s.type} {s.genreFilter && `(${s.genreFilter})`} • <span className="uppercase text-[#e50914]">
+                                                    {(s.scopes || [(s as any).scope || 'home']).map(sc => sc.replace('new', 'New & Popular')).join(', ')}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -114,7 +134,7 @@ export const SectionManager: React.FC = () => {
                     <div className="bg-[#1f1f1f] rounded-lg border border-gray-800 p-6 sticky top-24">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold">{isEditing ? 'Edit Section' : 'Add New Section'}</h3>
-                            {isEditing && <button onClick={resetForm} size={16} className="text-gray-400 hover:text-white"><X size={20} /></button>}
+                            {isEditing && <button onClick={resetForm} className="text-gray-400 hover:text-white"><X size={20} /></button>}
                         </div>
 
                         <form onSubmit={handleSave} className="space-y-4">
@@ -123,13 +143,20 @@ export const SectionManager: React.FC = () => {
                                 <input required value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm focus:border-white outline-none" placeholder="e.g. Action Movies" />
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Appears On (Page)</label>
-                                <select value={scope} onChange={e => setScope(e.target.value as any)} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 text-sm outline-none">
-                                    <option value="home">Home</option>
-                                    <option value="tv">TV Shows</option>
-                                    <option value="movie">Movies</option>
-                                    <option value="new">New & Popular</option>
-                                </select>
+                                <label className="block text-xs text-gray-400 mb-2 font-bold text-gray-200">Appears On (Select Multiple)</label>
+                                <div className="grid grid-cols-1 gap-2 bg-[#2a2a2a] p-3 rounded border border-gray-700">
+                                    {availableScopes.map(s => (
+                                        <label key={s.id} className="flex items-center gap-3 cursor-pointer group hover:text-white transition">
+                                            <input
+                                                type="checkbox"
+                                                className="accent-[#e50914] w-4 h-4 cursor-pointer"
+                                                checked={scopes.includes(s.id as any)}
+                                                onChange={() => handleScopeToggle(s.id)}
+                                            />
+                                            <span className="text-sm">{s.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-400 mb-1">Content Type</label>

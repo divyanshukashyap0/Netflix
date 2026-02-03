@@ -63,6 +63,8 @@ export const ContentManager: React.FC = () => {
         vote_average: Number(data.vote_average),
         // Ensure booleans are correct
         isPublished: !!data.isPublished,
+        allowDownload: !!data.allowDownload,
+        allowPlayback: !!data.allowPlayback,
       };
 
       let contentId = editingId;
@@ -144,6 +146,8 @@ export const ContentManager: React.FC = () => {
     setValue('tags', content.tags);
     setValue('movieDriveId', content.movieDriveId);
     setValue('isPublished', content.isPublished !== false); // Default to true if undefined
+    setValue('allowDownload', content.allowDownload !== false); // Default to true if undefined
+    setValue('allowPlayback', content.allowPlayback !== false); // Default to true if undefined
     setValue('vote_average', content.vote_average);
     setValue('release_date', content.release_date);
 
@@ -304,9 +308,19 @@ export const ContentManager: React.FC = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Status</label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <input type="checkbox" {...register('isPublished')} className="w-5 h-5 accent-green-500" />
-                    <span className="text-white text-sm">Published</span>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" {...register('isPublished')} className="w-5 h-5 accent-green-500" />
+                      <span className="text-white text-sm">Published</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" {...register('allowDownload')} className="w-5 h-5 accent-blue-500" />
+                      <span className="text-white text-sm">Allow Download</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" {...register('allowPlayback')} className="w-5 h-5 accent-purple-500" />
+                      <span className="text-white text-sm">Allow Playback</span>
+                    </div>
                   </div>
                 </div>
                 <div>

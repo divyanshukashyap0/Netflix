@@ -84,34 +84,36 @@ export const Hero: React.FC = () => {
       </div>
 
       {/* Video Player - Direct iframe embed (starts after 5 second delay) */}
+      {/* Video Player - Direct iframe embed (starts after 5 second delay) */}
       {youtubeEmbedUrl && showVideo && (
-        <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none animate-fade-in">
           <iframe
             ref={iframeRef}
             src={youtubeEmbedUrl}
             title="Hero Video"
             allow="autoplay; encrypted-media"
             allowFullScreen
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] min-w-[200%] min-h-[200%]"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300%] h-[300%] md:w-[150%] md:h-[150%] min-w-full min-h-full opacity-60 md:opacity-100 mix-blend-screen md:mix-blend-normal"
             style={{ border: 'none' }}
           />
         </div>
       )}
 
-      {/* Vignette Overlays - Above video */}
+      {/* Vignette Overlays - Cinematic Layering */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent opacity-90 z-[2]"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent opacity-90 z-[2]"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent opacity-90 z-[2]"></div>
+      <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-[#141414] to-transparent z-[3]"></div>
 
       {/* Manual Mute Toggle */}
       {videoLoaded && youtubeEmbedUrl && (
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="absolute bottom-[25%] right-8 z-30 border border-white/30 rounded-full p-3 bg-black/20 hover:bg-white/10 transition backdrop-blur-sm hidden md:flex items-center justify-center"
+          className="absolute bottom-[35%] right-8 z-30 border border-white/30 rounded-full p-3 bg-black/20 hover:bg-white/10 transition backdrop-blur-sm hidden md:flex items-center justify-center group"
         >
           {isMuted ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:scale-110 transition"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:scale-110 transition"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
           )}
         </button>
       )}

@@ -1,5 +1,7 @@
-const CACHE_NAME = 'netflix-pwa-v1';
-const DYNAMIC_CACHE = 'netflix-dynamic-v1';
+const CACHE_NAME = 'netflix-pwa-v2';
+const IMAGE_CACHE_NAME = 'netflix-images-v1';
+const DYNAMIC_CACHE_NAME = 'netflix-dynamic-v2';
+const MAX_IMAGES = 100;
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -10,23 +12,34 @@ const ASSETS_TO_CACHE = [
     'https://cdn.tailwindcss.com'
 ];
 
-// Install Event - Cache Static Assets
+// Helper: Limit Cache Size (LRU)
+const limitCacheSize = async (name, size) => {
+    const cache = await caches.open(name);
+    const keys = await cache.keys();
+    if (keys.length > size) {
+        await cache.delete(keys[0]);
+        limitCacheSize(name, size);
+    }
+};
+
+// Install: Cache Static Assets
 self.addEventListener('install', (event) => {
+    // Force new SW to activate immediately
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
-    self.skipWaiting();
 });
 
-// Activate Event - Clean Old Caches
+// Activate: Cleanup Old Caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== CACHE_NAME && key !== DYNAMIC_CACHE) {
+                    if (key !== CACHE_NAME && key !== IMAGE_CACHE_NAME && key !== DYNAMIC_CACHE_NAME) {
                         return caches.delete(key);
                     }
                 })
@@ -36,44 +49,71 @@ self.addEventListener('activate', (event) => {
     return self.clients.claim();
 });
 
-// Fetch Event - Network First for Data, Cache First for Assets
+// Fetch Strategy
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Firestore & API calls: Network First, fallback to nothing (or offline page logic handled in app)
-    if (url.href.includes('firestore') || url.href.includes('googleapis') || url.href.includes('api')) {
+    // 1. IMAGES (TMDB): Cache First + Limit Size
+    if (url.hostname.includes('tmdb.org') || url.href.match(/\.(png|jpg|jpeg|svg|gif)$/)) {
         event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    return response;
-                })
-                .catch(() => {
-                    // Optional: Return cached API response if you want to implement offline browsing
-                    return new Response(JSON.stringify({ error: 'Offline' }), {
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                })
+            caches.open(IMAGE_CACHE_NAME).then(async (cache) => {
+                const cachedResponse = await cache.match(event.request);
+                if (cachedResponse) return cachedResponse;
+
+                try {
+                    const networkResponse = await fetch(event.request);
+                    cache.put(event.request, networkResponse.clone());
+                    limitCacheSize(IMAGE_CACHE_NAME, MAX_IMAGES);
+                    return networkResponse;
+                } catch (e) {
+                    // Fallback placeholder could go here
+                    return new Response('', { status: 408, headers: { 'Content-Type': 'image/png' } });
+                }
+            })
         );
         return;
     }
 
-    // Static Assets: Cache First, Network fallback
+    // 2. API / FIREBASE: Network First (No Cache)
+    if (url.href.includes('firestore') || url.href.includes('googleapis') || url.href.includes('api')) {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                // Return simple offline JSON
+                return new Response(JSON.stringify({ error: 'Offline', offline: true }), {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            })
+        );
+        return;
+    }
+
+    // 3. NAVIGATION (HTML): Stale-While-Revalidate (or Cache, then Network)
+    // For SPA, we usually return index.html for navigation requests
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            caches.match('/index.html').then((cached) => {
+                return cached || fetch(event.request).catch(() => {
+                    // If both fail, show offline.html if it existed, or just nothing.
+                    return caches.match('/index.html');
+                });
+            })
+        );
+        return;
+    }
+
+    // 4. DEFAULT (JS/CSS/Other): Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(event.request).then((response) => {
-                // Cache new static assets
-                if (!response || response.status !== 200 || response.type !== 'basic') {
-                    return response;
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    caches.open(DYNAMIC_CACHE_NAME).then(cache => {
+                        cache.put(event.request, networkResponse.clone());
+                    });
                 }
-                const responseToCache = response.clone();
-                caches.open(DYNAMIC_CACHE).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
-                return response;
-            });
+                return networkResponse;
+            }).catch(() => cachedResponse); // Return cached if network fails
+
+            return cachedResponse || fetchPromise;
         })
     );
 });

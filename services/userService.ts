@@ -26,6 +26,28 @@ export const syncUser = async (user: User): Promise<void> => {
     }
 };
 
+export const getAllUsers = async (): Promise<User[]> => {
+    try {
+        const usersRef = collection(db, 'users');
+        const snap = await getDocs(usersRef);
+        return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
+    }
+};
+
+export const toggleBlockUser = async (uid: string, currentStatus: 'active' | 'blocked' = 'active'): Promise<void> => {
+    try {
+        const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+        await updateDoc(doc(db, 'users', uid), {
+            status: newStatus
+        });
+    } catch (error) {
+        console.error("Error toggling block status:", error);
+    }
+};
+
 // --- Profile Operations ---
 
 export const getProfiles = async (uid: string): Promise<Profile[]> => {

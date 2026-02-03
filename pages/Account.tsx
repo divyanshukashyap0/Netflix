@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store';
 import { Layout } from '../components/Layout';
 import { CreditCard, ChevronDown, Monitor, PenSquare, X, Check, Trash2, Save } from 'lucide-react';
+import { useDataSaver } from '../hooks/useDataSaver';
 import { AppRoute, Plan } from '../types';
 import { doc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -19,6 +20,7 @@ const AVATARS = [
 
 export const Account: React.FC = () => {
     const { user, profiles, logout, currentProfile } = useStore();
+    const { isDataSaver, toggleDataSaver } = useDataSaver();
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [isEditingPhone, setIsEditingPhone] = useState(false);
     const [email, setEmail] = useState(user?.email || '');
@@ -457,7 +459,20 @@ export const Account: React.FC = () => {
                         <div className="md:col-span-1">
                             <h2 className="text-lg font-medium text-gray-400 uppercase tracking-wide">Settings</h2>
                         </div>
-                        <div className="md:col-span-3 space-y-2">
+                        <div className="md:col-span-3 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-bold text-gray-200">Ultra-Low-Data Mode</h3>
+                                    <p className="text-sm text-gray-500">Save data by loading lower resolution images automatically.</p>
+                                </div>
+                                <button
+                                    onClick={toggleDataSaver}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${isDataSaver ? 'bg-blue-600' : 'bg-gray-400'}`}
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isDataSaver ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
                             <p className="text-[#0073e6] hover:text-[#005bb5] hover:underline text-sm cursor-pointer transition" onClick={() => { logout(); window.location.hash = AppRoute.LANDING; }}>
                                 Sign out of all devices
                             </p>

@@ -9,12 +9,15 @@ import { PWAInstall } from './PWAInstall';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+import { useOffline } from '../hooks/useOffline'; // Import Hook
+
 interface LayoutProps {
   children: React.ReactNode;
   showNav?: boolean;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
+  const isOffline = useOffline();
   const { user, logout, currentProfile, profiles, selectProfile, searchQuery, setSearchQuery } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -23,6 +26,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [hasNewNotif, setHasNewNotif] = useState(false);
+
+  // ... (existing effects)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,12 +84,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white padding-bottom-safe">
+    <div className="min-h-screen bg-[#141414] text-white padding-bottom-safe relative">
+      {/* Offline Banner */}
+      {isOffline && (
+        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-zinc-800 text-gray-300 text-xs md:text-sm text-center py-2 z-[200] border-t border-zinc-700 animate-in slide-in-from-bottom duration-300">
+          You are currently offline. Some features may be unavailable.
+        </div>
+      )}
+
       {showNav && (
         <nav
           className={`fixed w-full z-[100] transition-colors duration-700 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled || mobileMenuOpen
             ? 'bg-[#141414] shadow-md'
-            : 'bg-gradient-to-b from-black/70 via-black/30 to-transparent'
+            : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent'
             }`}
         >
           <div className="flex items-center gap-4 md:gap-8">

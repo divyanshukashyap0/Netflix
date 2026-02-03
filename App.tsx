@@ -15,6 +15,9 @@ import { Account } from './pages/Account';
 import { InfoPage } from './pages/InfoPage';
 import { AppRoute } from './types';
 import { Offline } from './components/Offline';
+import { Downloads } from './pages/Downloads';
+import { SystemMonitor } from './components/SystemMonitor';
+import { Toaster } from './components/Toaster';
 
 const Router: React.FC = () => {
   const { user, currentProfile, isLoading } = useStore();
@@ -23,7 +26,6 @@ const Router: React.FC = () => {
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash);
-
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
 
@@ -31,10 +33,25 @@ const Router: React.FC = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Security: Disable Context Menu (DRM Simulation)
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+
+    // Security: Session/Tab Detection
+    const channel = new BroadcastChannel('netflix_session');
+    channel.postMessage('new_tab');
+    channel.onmessage = (msg) => {
+      if (msg.data === 'new_tab') {
+        console.warn("Security Alert: Multiple sessions detected.");
+      }
+    };
+
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      channel.close();
     }
   }, []);
 
@@ -45,7 +62,6 @@ const Router: React.FC = () => {
   // Admin Routes (Strict Protection)
   if (currentHash.startsWith('#/admin')) {
     if (!user || user.role !== 'admin') {
-      // Redirect non-admins to Browse if logged in, or Login if not
       window.location.hash = user ? AppRoute.BROWSE : AppRoute.LOGIN;
       return null;
     }
@@ -77,7 +93,7 @@ const Router: React.FC = () => {
     return <Login />;
   }
 
-  // Info Pages (Accessible to all)
+  // Info Pages
   const infoRoutes = [
     AppRoute.FAQ, AppRoute.HELP, AppRoute.MEDIA, AppRoute.INVESTORS,
     AppRoute.JOBS, AppRoute.WAYS_TO_WATCH, AppRoute.TERMS, AppRoute.PRIVACY,
@@ -89,18 +105,17 @@ const Router: React.FC = () => {
     return <InfoPage />;
   }
 
-  // Not Logged In - Always show Landing which handles Signup flows
+  // Not Logged In
   if (!user) {
     return <Landing />;
   }
 
-  // Logged In but Inactive Subscription (User flow)
+  // Logged In but Inactive
   if (user && user.subscriptionStatus !== 'active' && user.role !== 'admin') {
-    // Landing page handles the 'plans' step logic via internal useEffect
     return <Landing />;
   }
 
-  // Logged In, but No Profile Selected
+  // Logged In, but No Profile
   if (user && !currentProfile) {
     return <ProfileSelection />;
   }
@@ -121,6 +136,8 @@ const Router: React.FC = () => {
       return <Home category="my-list" />;
     case `#${AppRoute.ACCOUNT}`:
       return <Account />;
+    case '#/downloads':
+      return <Downloads />;
     default:
       return <Home />;
   }
@@ -129,6 +146,8 @@ const Router: React.FC = () => {
 const App: React.FC = () => {
   return (
     <StoreProvider>
+      <SystemMonitor />
+      <Toaster />
       <Router />
     </StoreProvider>
   );

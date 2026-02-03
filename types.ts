@@ -6,6 +6,8 @@ export interface Content {
   backdrop_path: string;
   youtubeId: string;
   movieDriveId?: string; // Google Drive File ID
+  allowDownload?: boolean;
+  allowPlayback?: boolean;
   isPublished?: boolean;
   type: 'movie' | 'tv';
   genres: string[];
@@ -16,6 +18,7 @@ export interface Content {
   cast?: string[];
   tags?: string[];
   comingSoon?: boolean;
+  progress?: number; // Optional: For Continue Watching
 }
 
 export interface Notification {
@@ -86,6 +89,46 @@ export interface User {
   plan: string; // Name of the plan for UI display
   subscriptionStatus?: 'active' | 'inactive' | 'canceled';
   role?: 'user' | 'admin';
+  status?: 'active' | 'blocked';
+  lastLoginAt?: string;
+  lastLogoutAt?: string;
+  lastActiveAt?: string;
+  totalWatchTime?: number; // In seconds
+  continueWatching?: ContinueWatchingItem[];
+}
+
+export interface ContinueWatchingItem {
+  movieId: string;
+  progress: number; // 0-100 percentage
+  lastWatchedAt: string; // ISO String
+  stoppedAt: number; // Seconds
+  duration: number; // Seconds
+}
+
+export interface ViewingLog {
+  id?: string;
+  userId: string;
+  contentId: string;
+  contentType: 'movie' | 'trailer';
+  genre: string[];
+  startedAt: string;
+  endedAt?: string;
+  watchDurationSeconds: number;
+}
+
+export interface DownloadLog {
+  id?: string;
+  userId: string;
+  movieId: string;
+  downloadedAt: string;
+}
+
+export interface Session {
+  id?: string;
+  userId: string;
+  sessionStart: string;
+  sessionEnd?: string;
+  totalSeconds?: number;
 }
 
 export interface Profile {

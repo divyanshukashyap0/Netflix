@@ -15,6 +15,7 @@ interface MovieCardProps {
 export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, onPlay }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const { addToMyList, removeFromMyList, myList } = useStore();
     const inList = myList.includes(movie.id);
 
@@ -68,22 +69,29 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                             title={movie.title}
                         />
                     ) : (
-                        <img
-                            src={getImage(isLarge ? movie.poster_path : movie.backdrop_path)}
-                            alt={movie.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover rounded-t-md"
-                        />
+                        !imageError ? (
+                            <img
+                                src={getImage(isLarge ? movie.poster_path : movie.backdrop_path)}
+                                alt={movie.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover rounded-t-md"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 p-2 text-center">
+                                <span className="text-gray-500 text-xs font-bold">{movie.title}</span>
+                            </div>
+                        )
                     )}
                 </div>
 
-                {/* Expanded Info (Only visible on hover) */}
+                {/* Expanded Info (Only visible on hoverDesktop) */}
                 <AnimatePresence>
                     {isHovered && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="p-3 shadow-lg"
+                            className="p-3 shadow-lg bg-[#181818]"
                         >
                             <div className="flex items-center gap-2 mb-3">
                                 <button
@@ -115,7 +123,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-300 mb-2">
                                 <span className="text-green-400">{Math.round(movie.vote_average * 10)}% Match</span>
                                 <span className="border border-gray-500 px-1">HD</span>
-                                <span>{movie.release_date?.split('-')[0]}</span>
+                                <div>{movie.progress && movie.progress > 0 && <span className="text-white ml-2">{Math.round(movie.progress)}% left</span>}</div>
                             </div>
 
                             <div className="flex gap-2 text-[10px] text-white flex-wrap">
@@ -129,6 +137,16 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Progress Bar (Always visible if exists) */}
+                {movie.progress !== undefined && movie.progress > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 z-[60]">
+                        <div
+                            className="h-full bg-red-600"
+                            style={{ width: `${movie.progress}%` }}
+                        />
+                    </div>
+                )}
             </motion.div>
         </div>
     );

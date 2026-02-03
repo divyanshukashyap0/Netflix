@@ -3,6 +3,7 @@ import { Movie } from '../types';
 import { useStore } from '../context/Store';
 import { getImage } from '../services/tmdb';
 import { getContentBySection, getSiteSettings } from '../services/contentService';
+import { analyticsService } from '../services/analyticsService';
 import { X, Play, Plus, Check, ThumbsUp, ArrowLeft, MessageSquare, FileVideo } from 'lucide-react';
 
 interface ModalProps {
@@ -25,6 +26,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
   const scrollerRef = useRef<HTMLDivElement>(null);
 
+  // Analytics State
+  const viewLogIdRef = useRef<string | null>(null);
+  const viewStartTimeRef = useRef<number>(0);
+  const { user } = useStore(); // Access User for tracking
+
   // Reset playing state and scroll to top when movie changes
   useEffect(() => {
     setViewMode(autoPlay ? 'trailer' : 'details');
@@ -33,6 +39,42 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
       scrollerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [movie.id, autoPlay]);
+
+  // Tracking: Start/End Views
+  useEffect(() => {
+    const handleViewChange = async () => {
+      // 1. End previous View if exists
+      if (viewLogIdRef.current && user) {
+        const duration = Math.floor((Date.now() - viewStartTimeRef.current) / 1000);
+        await analyticsService.logViewEnd(viewLogIdRef.current, duration, user.uid);
+        viewLogIdRef.current = null;
+      }
+
+      // 2. Start new View if in viewing mode
+      if ((viewMode === 'trailer' || viewMode === 'movie') && user) {
+        viewStartTimeRef.current = Date.now();
+        const type = viewMode === 'trailer' ? 'trailer' : 'movie';
+        const logId = await analyticsService.logViewStart(user.uid, movie.id, type, movie.genres);
+        viewLogIdRef.current = logId;
+      }
+    };
+
+    handleViewChange();
+
+    return () => {
+      // Cleanup on unmount (close modal) or view mode change
+      if (viewLogIdRef.current && user) {
+        const duration = Math.floor((Date.now() - viewStartTimeRef.current) / 1000);
+        analyticsService.logViewEnd(viewLogIdRef.current, duration, user.uid);
+      }
+    };
+  }, [viewMode, movie.id, user]);
+
+  const handleDownloadClick = () => {
+    if (user) {
+      analyticsService.logDownload(user.uid, movie.id);
+    }
+  };
 
   useEffect(() => {
     const fetchSimilar = async () => {
@@ -163,6 +205,64 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
     };
   }, [viewMode, movie.youtubeId]);
 
+  // Gestures (Swipe to close)
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchOffset, setTouchOffset] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStart;
+    if (diff > 0) setTouchOffset(diff); // Only allow dragging down
+  };
+
+  const handleTouchEnd = () => {
+    if (touchOffset > 150) {
+      onClose(); // Close if dragged enough
+    } else {
+      setTouchOffset(0); // Reset
+    }
+    setTouchStart(null);
+  };
+
+  // Tracking: Progress (Continue Watching)
+  useEffect(() => {
+    if (!user || (viewMode !== 'trailer' && viewMode !== 'movie')) return;
+
+    const saveInterval = setInterval(async () => {
+      let progress = 0;
+      let duration = 0;
+      let currentTime = 0;
+
+      // YouTube Tracking
+      if (viewMode === 'trailer' && playerRef.current && playerRef.current.getCurrentTime) {
+        currentTime = playerRef.current.getCurrentTime();
+        duration = playerRef.current.getDuration();
+        if (duration > 0) progress = (currentTime / duration) * 100;
+      }
+
+      // Drive Proxy Tracking (Time based)
+      if (viewMode === 'movie') {
+        // Proxy: Assume 2 hour movie (7200s) for progress calculation if untrackable
+        // This is a rough estimation since we can't get real duration from Drive preview
+        currentTime = Math.floor((Date.now() - viewStartTimeRef.current) / 1000);
+        duration = 7200;
+        progress = (currentTime / duration) * 100;
+      }
+
+      if (currentTime > 5 && progress < 98) {
+        const { playbackService } = await import('../services/playbackService');
+        await playbackService.saveProgress(user.uid, movie.id, progress, currentTime, duration);
+      }
+    }, 10000); // Save every 10 seconds
+
+    return () => clearInterval(saveInterval);
+  }, [viewMode, movie.id, user]);
+
   return (
     <div
       ref={scrollerRef}
@@ -170,9 +270,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[850px] bg-[#181818] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 my-auto mx-4"
+        className="relative w-full max-w-[850px] bg-[#181818] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 my-auto mx-4 transition-transform ease-out"
         onClick={(e) => e.stopPropagation()}
+        style={{ transform: `translateY(${touchOffset}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
+        {/* Drag Handle for Mobile */}
+        <div className="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mt-2 mb-1 md:hidden opacity-50" />
 
         {/* Close Button */}
         <button
@@ -184,6 +290,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
         {/* Video / Cover Area */}
         <div className="relative h-[280px] md:h-[400px] bg-black group">
+
 
           {viewMode === 'details' ? (
             <>
@@ -197,24 +304,47 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
               <div className="absolute bottom-10 left-10 z-10 max-w-lg">
                 <h2 className="text-5xl font-bold mb-6 drop-shadow-lg tracking-tighter">{movie.title}</h2>
                 <div className="flex items-center gap-4 flex-wrap">
-                  {movie.movieDriveId && (
-                    <button
-                      onClick={() => setViewMode('movie')}
-                      className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 rounded font-bold hover:bg-opacity-90 transition text-lg"
-                    >
-                      <Play fill="black" size={24} />
-                      Watch Movie
-                    </button>
-                  )}
                   {movie.youtubeId && (
                     <button
                       onClick={() => setViewMode('trailer')}
-                      className={`flex items-center gap-2 ${movie.movieDriveId ? 'bg-[#6d6d6eb3] text-white hover:bg-[#6d6d6e66]' : 'bg-white text-black hover:bg-opacity-90'} px-6 py-2 rounded font-bold transition text-lg`}
+                      className="flex items-center gap-2 bg-white text-black hover:bg-opacity-90 px-6 py-2 rounded font-bold transition text-lg"
                     >
-                      {movie.movieDriveId ? <Play size={24} /> : <Play fill="black" size={24} />}
-                      {movie.movieDriveId ? 'Trailer' : 'Play Trailer'}
+                      <Play fill="black" size={24} />
+                      Watch Trailer
                     </button>
                   )}
+
+                  {movie.movieDriveId && movie.allowPlayback !== false && (
+                    <button
+                      onClick={() => setViewMode('movie')}
+                      className="flex items-center gap-2 bg-[#e50914] text-white hover:bg-red-700 px-6 py-2 rounded font-bold transition text-lg"
+                    >
+                      <Play fill="white" size={24} />
+                      Watch Movie
+                    </button>
+                  )}
+
+                  {movie.movieDriveId && movie.allowDownload !== false && (
+                    <div className="flex flex-col items-start gap-1">
+                      <a
+                        href={`https://drive.google.com/uc?export=download&id=${movie.movieDriveId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={handleDownloadClick}
+                        className="flex items-center gap-2 bg-[#6d6d6eb3] text-white hover:bg-[#6d6d6e66] px-6 py-2 rounded font-bold transition text-lg"
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                        Download Movie
+                      </a>
+                    </div>
+                  )}
+
+                  {(movie.allowDownload !== false || movie.allowPlayback !== false) && movie.movieDriveId && (
+                    <span className="w-full text-[10px] text-gray-400 mt-1">
+                      Large file – playback & download speed depend on Google Drive
+                    </span>
+                  )}
+
                   <button
                     onClick={toggleList}
                     className="flex items-center justify-center border-2 border-gray-500 bg-[#2a2a2a]/60 text-white p-2 rounded-full hover:border-white transition"

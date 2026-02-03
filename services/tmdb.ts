@@ -24,9 +24,21 @@ export const requests = {
 };
 
 // Helper to format TMDB image URLs
-export const getImage = (path: string | null, size: 'original' | 'w500' = 'w500') => {
+// Helper to format TMDB image URLs
+export const getImage = (path: string | null, size: 'original' | 'w500' | 'w200' | 'w1280' = 'w500') => {
   if (!path || path.includes('http')) return path || 'https://via.placeholder.com/500x281?text=No+Image';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
+
+  // Data Saver Check
+  let finalSize = size;
+  try {
+    const isDataSaver = localStorage.getItem('netflix_data_saver_mode') === 'true';
+    if (isDataSaver) {
+      if (size === 'original' || size === 'w1280') finalSize = 'w780'; // Reduce 4k/HD to 720p equivalent
+      if (size === 'w500') finalSize = 'w342'; // Card size reduction
+    }
+  } catch (e) { }
+
+  return `https://image.tmdb.org/t/p/${finalSize}${path}`;
 };
 
 export const fetchMovies = async (url: string): Promise<Movie[]> => {

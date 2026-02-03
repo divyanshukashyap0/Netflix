@@ -4,6 +4,7 @@ import { auth, googleProvider, db } from '../lib/firebase';
 import { signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithRedirect } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { syncUser, getProfiles, addToMyList as addToMyListService, removeFromMyList as removeFromMyListService, createProfile, updateProfile as updateProfileService } from '../services/userService';
+import { analyticsService } from '../services/analyticsService';
 
 interface StoreContextType {
   user: User | null;
@@ -61,6 +62,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (timeoutId) clearTimeout(timeoutId);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
+
+  // Heartbeat for Analytics
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      analyticsService.updateHeartbeat(user.uid);
+    }, 30000); // 30s
+    return () => clearInterval(interval);
   }, [user]);
 
   // Sync with Firebase Auth state
@@ -94,6 +108,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           photoURL: firebaseUser.photoURL || undefined
         };
         setUser(mappedUser as any);
+
+        // Security Check: Blocked User
+        if (dbRole === 'user' && (data?.status === 'blocked')) {
+          await signOut(auth);
+          alert("Your account has been restricted. Please contact support.");
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
 
         // Sync user to Firestore (will create if missing, or update basic fields)
         await syncUser(mappedUser);

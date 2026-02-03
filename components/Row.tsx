@@ -8,21 +8,26 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface RowProps {
   section: Section;
   isLarge?: boolean;
+  movies?: Movie[]; // Optional: Pre-loaded movies (e.g. Continue Watching)
 }
 
-export const Row: React.FC<RowProps> = ({ section, isLarge }) => {
+export const Row: React.FC<RowProps> = ({ section, isLarge, movies: initialMovies }) => {
   const rowRef = useRef<HTMLDivElement>(null);
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [movies, setMovies] = useState<Movie[]>(initialMovies || []);
   const [modalConfig, setModalConfig] = useState<{ movie: Movie; autoPlay: boolean } | null>(null);
   const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
+    if (initialMovies) {
+      setMovies(initialMovies);
+      return;
+    }
     const loadContent = async () => {
       const data = await getContentBySection(section);
       setMovies(data);
     };
     loadContent();
-  }, [section]);
+  }, [section, initialMovies]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {

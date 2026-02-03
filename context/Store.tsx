@@ -32,6 +32,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 Minutes
+
+  // Auto Logout on Inactivity
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId: any;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+        alert("Session expired due to inactivity.");
+      }, INACTIVITY_LIMIT);
+    };
+
+    // Events to monitor
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+
+    // Set initial timer
+    resetTimer();
+
+    // Attach listeners
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
 
   // Sync with Firebase Auth state
   useEffect(() => {

@@ -5,6 +5,8 @@ export interface Content {
   poster_path: string;
   backdrop_path: string;
   youtubeId: string;
+  movieDriveId?: string; // Google Drive File ID
+  isPublished?: boolean;
   type: 'movie' | 'tv';
   genres: string[];
   release_date: string;

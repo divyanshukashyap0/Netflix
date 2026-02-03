@@ -4,6 +4,7 @@ import { AppRoute, Notification as AppNotification } from '../types';
 import { Search, Bell, ChevronDown, Menu, X, Trash2 } from 'lucide-react';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
+import { MobileSidebar } from './MobileSidebar';
 import { PWAInstall } from './PWAInstall';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -81,7 +82,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
     <div className="min-h-screen bg-[#141414] text-white padding-bottom-safe">
       {showNav && (
         <nav
-          className={`fixed w-full z-[100] transition-colors duration-500 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled || mobileMenuOpen ? 'bg-[#141414]' : 'bg-gradient-to-b from-black/80 to-transparent'
+          className={`fixed w-full z-[100] transition-colors duration-700 ease-in-out px-4 md:px-12 py-4 flex items-center justify-between ${isScrolled || mobileMenuOpen
+            ? 'bg-[#141414] shadow-md'
+            : 'bg-gradient-to-b from-black/70 via-black/30 to-transparent'
             }`}
         >
           <div className="flex items-center gap-4 md:gap-8">
@@ -150,12 +153,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
                       <div className="max-h-[400px] overflow-y-auto">
                         {notifications.length > 0 ? (
                           notifications.map(n => (
-                            <div key={n.id} className="p-4 hover:bg-white/5 transition flex gap-3 border-b border-gray-800 last:border-0 group">
+                            <div
+                              key={n.id}
+                              className="p-4 hover:bg-white/5 transition flex gap-3 border-b border-gray-800 last:border-0 group cursor-pointer"
+                              onClick={() => {
+                                if (n.link) window.location.hash = n.link.startsWith('#') ? n.link.substring(1) : n.link;
+                                setShowNotifMenu(false);
+                              }}
+                            >
                               {n.image && <img src={n.image} className="w-16 h-10 object-cover rounded" alt="" />}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold text-white line-clamp-1">{n.title}</p>
                                 <p className="text-xs text-gray-400 line-clamp-2 mt-0.5">{n.message}</p>
-                                <p className="text-[10px] text-gray-500 mt-2">{new Date(n.createdAt).toLocaleDateString()}</p>
                               </div>
                               {!n.read && <div className="w-2 h-2 bg-red-600 rounded-full shrink-0 self-center"></div>}
                             </div>
@@ -235,17 +244,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, showNav = true }) => {
             )}
           </div>
 
-          {/* Mobile Menu Dropdown (Keep for overflow items if needed) */}
-          {mobileMenuOpen && (
-            <div className="absolute top-16 left-0 w-64 bg-black/95 h-screen border-r border-gray-800 animate-fade-in lg:hidden flex flex-col pt-4 px-4 gap-6 z-[90]">
-              <ul className="flex flex-col gap-6 text-lg font-medium text-gray-300">
-                {/* Replaced by Bottom Nav mainly, but keeping specific items */}
-                <li className="hover:text-white cursor-pointer" onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.MY_LIST; }}>My List</li>
-                <li className="hover:text-white cursor-pointer" onClick={() => { setMobileMenuOpen(false); window.location.hash = AppRoute.ACCOUNT; }}>Account</li>
-                <li className="hover:text-white cursor-pointer" onClick={() => { logout(); window.location.hash = AppRoute.LANDING; }}>Sign Out</li>
-              </ul>
-            </div>
-          )}
+          {/* Mobile Menu Dropdown */}
+          <MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
         </nav>
       )}
       <main className="pb-16 lg:pb-0">

@@ -42,10 +42,11 @@ const Router: React.FC = () => {
     return <Offline />;
   }
 
-  // Admin Routes (Simple protection)
+  // Admin Routes (Strict Protection)
   if (currentHash.startsWith('#/admin')) {
-    if (!user) {
-      window.location.hash = AppRoute.LOGIN;
+    if (!user || user.role !== 'admin') {
+      // Redirect non-admins to Browse if logged in, or Login if not
+      window.location.hash = user ? AppRoute.BROWSE : AppRoute.LOGIN;
       return null;
     }
 

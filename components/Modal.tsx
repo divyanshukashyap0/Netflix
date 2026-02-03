@@ -3,7 +3,7 @@ import { Movie } from '../types';
 import { useStore } from '../context/Store';
 import { getImage } from '../services/tmdb';
 import { getContentBySection, getSiteSettings } from '../services/contentService';
-import { X, Play, Plus, Check, ThumbsUp, ArrowLeft, MessageSquare } from 'lucide-react';
+import { X, Play, Plus, Check, ThumbsUp, ArrowLeft, MessageSquare, FileVideo } from 'lucide-react';
 
 interface ModalProps {
   movie: Movie;
@@ -14,7 +14,7 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, onSwitchMovie }) => {
   const { myList, addToMyList, removeFromMyList } = useStore();
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [viewMode, setViewMode] = useState<'details' | 'trailer' | 'movie'>(autoPlay ? 'trailer' : 'details');
   const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [audioTracks, setAudioTracks] = useState<any[]>([]);
   const [currentAudioTrack, setCurrentAudioTrack] = useState<string>('');
@@ -27,7 +27,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
   // Reset playing state and scroll to top when movie changes
   useEffect(() => {
-    setIsPlaying(autoPlay);
+    setViewMode(autoPlay ? 'trailer' : 'details');
     // Scroll to top of modal for visibility of video
     if (scrollerRef.current) {
       scrollerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -43,7 +43,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
         title: 'Similar',
         type: 'trending',
         order: 0,
-        enabled: true
+        enabled: true,
+        scopes: ['movie']
       });
       // Filter out current movie and limit to 9
       setSimilarMovies(movies.filter(m => m.id !== movie.id).slice(0, 9));
@@ -119,7 +120,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
     };
 
     const initPlayer = async () => {
-      if (!isPlaying || !movie.youtubeId || !containerRef.current) return;
+      if (viewMode !== 'trailer' || !movie.youtubeId || !containerRef.current) return;
       const YT = await ensureYouTubeAPI();
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch { }
@@ -160,7 +161,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
         playerRef.current = null;
       }
     };
-  }, [isPlaying, movie.youtubeId]);
+  }, [viewMode, movie.youtubeId]);
 
   return (
     <div
@@ -184,7 +185,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
         {/* Video / Cover Area */}
         <div className="relative h-[280px] md:h-[400px] bg-black group">
 
-          {!isPlaying ? (
+          {viewMode === 'details' ? (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent z-[5]" />
               <img
@@ -195,14 +196,25 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
               <div className="absolute bottom-10 left-10 z-10 max-w-lg">
                 <h2 className="text-5xl font-bold mb-6 drop-shadow-lg tracking-tighter">{movie.title}</h2>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setIsPlaying(true)}
-                    className="flex items-center gap-2 bg-white text-black px-8 py-2 rounded font-bold hover:bg-opacity-90 transition text-lg"
-                  >
-                    <Play fill="black" size={24} />
-                    Play
-                  </button>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {movie.movieDriveId && (
+                    <button
+                      onClick={() => setViewMode('movie')}
+                      className="flex items-center gap-2 bg-white text-black px-6 md:px-8 py-2 rounded font-bold hover:bg-opacity-90 transition text-lg"
+                    >
+                      <Play fill="black" size={24} />
+                      Watch Movie
+                    </button>
+                  )}
+                  {movie.youtubeId && (
+                    <button
+                      onClick={() => setViewMode('trailer')}
+                      className={`flex items-center gap-2 ${movie.movieDriveId ? 'bg-[#6d6d6eb3] text-white hover:bg-[#6d6d6e66]' : 'bg-white text-black hover:bg-opacity-90'} px-6 py-2 rounded font-bold transition text-lg`}
+                    >
+                      {movie.movieDriveId ? <Play size={24} /> : <Play fill="black" size={24} />}
+                      {movie.movieDriveId ? 'Trailer' : 'Play Trailer'}
+                    </button>
+                  )}
                   <button
                     onClick={toggleList}
                     className="flex items-center justify-center border-2 border-gray-500 bg-[#2a2a2a]/60 text-white p-2 rounded-full hover:border-white transition"
@@ -216,69 +228,94 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
               </div>
             </>
           ) : (
-            <div className="w-full h-full relative">
+            <div className="w-full h-full relative bg-black">
               <button
-                onClick={() => setIsPlaying(false)}
-                className="absolute top-4 left-4 z-30 bg-black/50 p-2 rounded-full hover:bg-black/80 text-white flex items-center gap-2"
+                onClick={() => setViewMode('details')}
+                className="absolute top-4 left-4 z-50 bg-black/50 p-2 rounded-full hover:bg-black/80 text-white flex items-center gap-2 border border-white/10"
               >
                 <ArrowLeft size={20} /> Back
               </button>
 
-              {/* Audio & Subtitles Controls - Positioned at bottom-right but above YT controls */}
-              <div className="absolute bottom-16 right-4 z-[60]">
-                <div className="relative">
-                  <button
-                    onClick={() => setShowAudioMenu(!showAudioMenu)}
-                    className="bg-black/60 p-2 md:p-3 rounded-full hover:bg-white/20 transition-all text-white flex items-center justify-center shadow-lg border border-white/20 backdrop-blur-md group"
-                    title="Audio & Subtitles"
-                  >
-                    <MessageSquare size={20} className="md:w-6 md:h-6" />
-                  </button>
+              {/* Content Player Switcher */}
+              {viewMode === 'trailer' && (
+                <>
+                  {/* Audio & Subtitles Controls */}
+                  <div className="absolute bottom-16 right-4 z-[60]">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowAudioMenu(!showAudioMenu)}
+                        className="bg-black/60 p-2 md:p-3 rounded-full hover:bg-white/20 transition-all text-white flex items-center justify-center shadow-lg border border-white/20 backdrop-blur-md group"
+                        title="Audio & Subtitles"
+                      >
+                        <MessageSquare size={20} className="md:w-6 md:h-6" />
+                      </button>
 
-                  {showAudioMenu && (
-                    <div className="absolute bottom-12 right-0 bg-black/95 border border-gray-700 rounded-lg p-3 md:p-4 w-[200px] md:min-w-[250px] shadow-xl max-h-[50vh] overflow-y-auto">
-                      <div className="text-white space-y-3">
-                        <div>
-                          <h4 className="text-xs md:text-sm font-bold mb-2 text-gray-300 uppercase tracking-wide">Audio</h4>
-                          <div className="space-y-1">
-                            {['English', 'Hindi', 'Spanish', 'French', 'German'].map((lang) => (
-                              <button
-                                key={lang}
-                                onClick={() => handleAudioTrackChange(lang.toLowerCase())}
-                                className={`w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition ${currentAudioTrack === lang.toLowerCase() ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300'
-                                  }`}
-                              >
-                                {lang}
-                              </button>
-                            ))}
+                      {showAudioMenu && (
+                        <div className="absolute bottom-12 right-0 bg-black/95 border border-gray-700 rounded-lg p-3 md:p-4 w-[200px] md:min-w-[250px] shadow-xl max-h-[50vh] overflow-y-auto">
+                          <div className="text-white space-y-3">
+                            <div>
+                              <h4 className="text-xs md:text-sm font-bold mb-2 text-gray-300 uppercase tracking-wide">Audio</h4>
+                              <div className="space-y-1">
+                                {['English', 'Hindi', 'Spanish', 'French', 'German'].map((lang) => (
+                                  <button
+                                    key={lang}
+                                    onClick={() => handleAudioTrackChange(lang.toLowerCase())}
+                                    className={`w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition ${currentAudioTrack === lang.toLowerCase() ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300'
+                                      }`}
+                                  >
+                                    {lang}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="border-t border-gray-700 pt-3">
+                              <h4 className="text-xs md:text-sm font-bold mb-2 text-gray-300 uppercase tracking-wide">Subtitles</h4>
+                              <div className="space-y-1">
+                                <button
+                                  onClick={() => handleSubtitleToggle(true)}
+                                  className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300"
+                                >
+                                  Off
+                                </button>
+                                {['English', 'Hindi', 'Spanish'].map((lang) => (
+                                  <button
+                                    key={lang}
+                                    className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300"
+                                  >
+                                    {lang}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="border-t border-gray-700 pt-3">
-                          <h4 className="text-xs md:text-sm font-bold mb-2 text-gray-300 uppercase tracking-wide">Subtitles</h4>
-                          <div className="space-y-1">
-                            <button
-                              onClick={() => handleSubtitleToggle(true)}
-                              className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300"
-                            >
-                              Off
-                            </button>
-                            {['English', 'Hindi', 'Spanish'].map((lang) => (
-                              <button
-                                key={lang}
-                                className="w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm hover:bg-gray-800 transition text-gray-300"
-                              >
-                                {lang}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div ref={containerRef} className="w-full h-full" />
+                </>
+              )}
+
+              {viewMode === 'movie' && (
+                <div className="w-full h-full flex items-center justify-center">
+                  {movie.movieDriveId ? (
+                    <iframe
+                      src={`https://drive.google.com/file/d/${movie.movieDriveId}/preview`}
+                      className="w-full h-full border-none"
+                      allowFullScreen
+                      allow="autoplay"
+                      title={movie.title}
+                    />
+                  ) : (
+                    <div className="text-white text-center">
+                      <FileVideo size={48} className="mx-auto mb-4 text-gray-500" />
+                      <p className="text-xl font-bold">Movie not available</p>
+                      <p className="text-gray-400">Please try again later.</p>
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div ref={containerRef} className="w-full h-full" />
+              )}
             </div>
           )}
         </div>

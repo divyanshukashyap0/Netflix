@@ -4,7 +4,8 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, orderBy, query, where, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { Content, Section, AppRoute } from '../../types';
-import { Pencil, Trash2, Plus, X, Star } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Star, Play, FileVideo, Eye, EyeOff } from 'lucide-react';
+import { extractGoogleDriveId, extractYoutubeId } from '../../services/utils';
 
 export const ContentManager: React.FC = () => {
   const [contents, setContents] = useState<Content[]>([]);
@@ -14,7 +15,9 @@ export const ContentManager: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [heroContentId, setHeroContentId] = useState<string>('');
 
-  const { register, handleSubmit, reset, setValue } = useForm<Content>();
+  const { register, handleSubmit, reset, setValue, watch } = useForm<Content>();
+  const watchedYoutubeId = watch('youtubeId');
+  const watchedDriveId = watch('movieDriveId');
 
   const fetchData = async () => {
     // Fetch Content
@@ -57,7 +60,9 @@ export const ContentManager: React.FC = () => {
         genres: typeof data.genres === 'string' ? (data.genres as string).split(',').map((g: string) => g.trim()) : data.genres,
         cast: typeof data.cast === 'string' ? (data.cast as string).split(',').map((c: string) => c.trim()) : data.cast || [],
         tags: typeof data.tags === 'string' ? (data.tags as string).split(',').map((t: string) => t.trim()) : data.tags || [],
-        vote_average: Number(data.vote_average)
+        vote_average: Number(data.vote_average),
+        // Ensure booleans are correct
+        isPublished: !!data.isPublished,
       };
 
       let contentId = editingId;
@@ -103,10 +108,10 @@ export const ContentManager: React.FC = () => {
       if (!editingId) {
         await addDoc(collection(db, 'notifications'), {
           title: 'New Content Added',
-          message: `Check out our newest addition: ${formattedData.title}`,
+          message: `${formattedData.title}: ${formattedData.overview?.substring(0, 100)}...`,
           image: formattedData.backdrop_path || formattedData.poster_path,
           type: 'content',
-          link: `#${AppRoute.BROWSE}`, // Or link to specific content if route exists
+          link: `#${AppRoute.BROWSE}`,
           createdAt: new Date().toISOString(),
           read: false
         });
@@ -115,6 +120,9 @@ export const ContentManager: React.FC = () => {
       alert("Error saving content: " + e.message);
     }
   };
+
+  const validateYoutubeId = (id: string) => /^[a-zA-Z0-9_-]{11}$/.test(id);
+  const validateDriveId = (id: string) => /^[a-zA-Z0-9_-]{20,}$/.test(id);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this content?")) {
@@ -134,6 +142,8 @@ export const ContentManager: React.FC = () => {
     setValue('genres', content.genres);
     setValue('cast', content.cast);
     setValue('tags', content.tags);
+    setValue('movieDriveId', content.movieDriveId);
+    setValue('isPublished', content.isPublished !== false); // Default to true if undefined
     setValue('vote_average', content.vote_average);
     setValue('release_date', content.release_date);
 
@@ -200,10 +210,104 @@ export const ContentManager: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#2a2a2a] p-4 rounded border border-gray-700">
+                {/* YouTube Trailer Section */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm text-red-500 font-bold mb-2">
+                    <Play size={16} /> YouTube Trailer ID
+                  </label>
+                  <input
+                    {...register('youtubeId', {
+                      validate: (value) => !value || validateYoutubeId(value) || 'Invalid YouTube ID (11 chars required)',
+                      onChange: (e) => {
+                        const extracted = extractYoutubeId(e.target.value);
+                        if (extracted && extracted !== e.target.value) {
+                          setValue('youtubeId', extracted, { shouldValidate: true });
+                        }
+                      }
+                    })}
+                    className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-red-500 outline-none mb-1"
+                    placeholder="Paste YouTube Link or ID"
+                  />
+                  <p className="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>Supports Full Links & IDs</span>
+                    {watchedYoutubeId && validateYoutubeId(watchedYoutubeId) && (
+                      <span className="text-green-500 font-bold">✓ ID Detected</span>
+                    )}
+                  </p>
+
+                  {/* Preview Helper */}
+                  <div className="aspect-video bg-black rounded overflow-hidden relative group border border-gray-800">
+                    {watchedYoutubeId && validateYoutubeId(watchedYoutubeId) ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${watchedYoutubeId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-xs">
+                        {watchedYoutubeId ? 'Invalid ID' : 'Preview will appear here'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Google Drive Movie Section */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm text-blue-400 font-bold mb-2">
+                    <FileVideo size={16} /> Google Drive File ID
+                  </label>
+                  <input
+                    {...register('movieDriveId', {
+                      validate: (value) => !value || validateDriveId(value) || 'Invalid Drive File ID',
+                      onChange: (e) => {
+                        const extracted = extractGoogleDriveId(e.target.value);
+                        if (extracted && extracted !== e.target.value) {
+                          setValue('movieDriveId', extracted, { shouldValidate: true });
+                        }
+                      }
+                    })}
+                    className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-blue-500 outline-none mb-1"
+                    placeholder="Paste Drive Link or ID"
+                  />
+                  <p className="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>Supports Full Links & IDs</span>
+                    {watchedDriveId && validateDriveId(watchedDriveId) && (
+                      <span className="text-green-500 font-bold">✓ ID Detected</span>
+                    )}
+                  </p>
+
+                  <div className="aspect-video bg-black rounded overflow-hidden relative flex items-center justify-center border border-gray-800">
+                    {watchedDriveId && validateDriveId(watchedDriveId) ? (
+                      <iframe
+                        src={`https://drive.google.com/file/d/${watchedDriveId}/preview`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 'none' }}
+                        title="Drive Preview"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <FileVideo className="mx-auto mb-1 text-gray-600" />
+                        <span className="text-xs text-gray-600">{watchedDriveId ? 'Invalid ID' : 'Movie Preview'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">YouTube ID</label>
-                  <input {...register('youtubeId')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="dQw4w9WgXcQ" />
+                  <label className="block text-sm text-gray-400 mb-1">Status</label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <input type="checkbox" {...register('isPublished')} className="w-5 h-5 accent-green-500" />
+                    <span className="text-white text-sm">Published</span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Rating (0-10)</label>
@@ -264,6 +368,7 @@ export const ContentManager: React.FC = () => {
           <thead className="bg-[#141414] text-gray-400 text-xs uppercase">
             <tr>
               <th className="p-4">Title</th>
+              <th className="p-4">Status</th>
               <th className="p-4">Type</th>
               <th className="p-4">Rating</th>
               <th className="p-4 text-right">Actions</th>
@@ -286,6 +391,17 @@ export const ContentManager: React.FC = () => {
                   </button>
                   <img src={c.poster_path} className="w-8 h-12 object-cover rounded bg-gray-700" alt="" />
                   {c.title}
+                </td>
+                <td className="p-4">
+                  {c.isPublished !== false ? (
+                    <span className="flex items-center gap-1 text-green-500 text-xs font-bold border border-green-500/30 bg-green-500/10 px-2 py-1 rounded-full w-fit">
+                      <Eye size={12} /> Live
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-gray-500 text-xs font-bold border border-gray-600 bg-gray-700/30 px-2 py-1 rounded-full w-fit">
+                      <EyeOff size={12} /> Draft
+                    </span>
+                  )}
                 </td>
                 <td className="p-4 text-gray-400 capitalize">{c.type}</td>
                 <td className="p-4 text-green-500">{c.vote_average}</td>

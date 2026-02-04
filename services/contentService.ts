@@ -100,7 +100,7 @@ export const searchContent = async (text: string): Promise<Content[]> => {
 
 
 export const clearDatabase = async () => {
-  console.log("Clearing database...");
+
   const confirmText = "Are you sure you want to DELETE ALL content and sections? This cannot be undone.";
   if (!window.confirm(confirmText)) return;
 
@@ -116,6 +116,6 @@ export const clearDatabase = async () => {
   const sectionDeletions = sectionsSnap.docs.map(d => deleteDoc(doc(db, 'sections', d.id)));
   await Promise.all(sectionDeletions);
 
-  console.log("Database cleared!");
+
   alert("All data cleared successfully.");
 };

@@ -85,7 +85,7 @@ export const Landing: React.FC = () => {
       description: `${selectedPlan.name} Subscription`,
       image: "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.png",
       handler: async function (response: any) {
-        console.log("Payment Success", response);
+
         try {
           await updateDoc(doc(db, 'users', user.uid), {
             plan: selectedPlan.name,
@@ -109,7 +109,7 @@ export const Landing: React.FC = () => {
       theme: { color: "#E50914" },
       modal: {
         ondismiss: function () {
-          console.log("Payment cancelled by user");
+
         }
       }
     };

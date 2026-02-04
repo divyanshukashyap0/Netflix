@@ -3,9 +3,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-if (import.meta.env.DEV) {
-  import('./lib/devConsole');
-}
+// Console cleaner - runs in both dev and production
+import './lib/devConsole';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

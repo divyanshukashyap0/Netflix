@@ -71,7 +71,11 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                     ) : (
                         !imageError ? (
                             <img
-                                src={getImage(isLarge ? movie.poster_path : movie.backdrop_path)}
+                                src={getImage(
+                                    window.innerWidth < 768
+                                        ? (isLarge ? (movie.mobile_poster_path || movie.poster_path) : (movie.mobile_backdrop_path || movie.backdrop_path))
+                                        : (isLarge ? movie.poster_path : movie.backdrop_path)
+                                )}
                                 alt={movie.title}
                                 loading="lazy"
                                 className="w-full h-full object-cover rounded-t-md"

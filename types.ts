@@ -4,6 +4,8 @@ export interface Content {
   overview: string;
   poster_path: string;
   backdrop_path: string;
+  mobile_poster_path?: string; // Mobile-specific poster (optional)
+  mobile_backdrop_path?: string; // Mobile-specific backdrop (optional)
   youtubeId: string;
   movieDriveId?: string; // Google Drive File ID
   allowDownload?: boolean;
@@ -19,6 +21,10 @@ export interface Content {
   tags?: string[];
   comingSoon?: boolean;
   progress?: number; // Optional: For Continue Watching
+  duration?: number; // In minutes
+  maturityRating?: string; // e.g. "U/A 13+"
+  quality?: string; // e.g. "4K"
+  partOfSeries?: boolean;
 }
 
 export interface Notification {

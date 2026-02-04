@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Movie } from '../types';
 import { useStore } from '../context/Store';
 import { getImage } from '../services/tmdb';
@@ -15,12 +16,17 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, onSwitchMovie }) => {
   const { myList, addToMyList, removeFromMyList } = useStore();
-  const [viewMode, setViewMode] = useState<'details' | 'trailer' | 'movie'>(autoPlay ? 'trailer' : 'details');
+  const [viewMode, setViewMode] = useState<'details' | 'trailer' | 'movie'>(
+    autoPlay ? (movie.movieDriveId ? 'movie' : 'trailer') : 'details'
+  );
   const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [audioTracks, setAudioTracks] = useState<any[]>([]);
   const [currentAudioTrack, setCurrentAudioTrack] = useState<string>('');
   const [showAudioMenu, setShowAudioMenu] = useState(false);
   const inList = myList.includes(movie.id);
+  // Calculate match score
+  const matchScore = React.useMemo(() => Math.round((movie.vote_average || 9) * 10), [movie.vote_average]);
+
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -33,12 +39,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
 
   // Reset playing state and scroll to top when movie changes
   useEffect(() => {
-    setViewMode(autoPlay ? 'trailer' : 'details');
+    setViewMode(autoPlay ? (movie.movieDriveId ? 'movie' : 'trailer') : 'details');
     // Scroll to top of modal for visibility of video
     if (scrollerRef.current) {
       scrollerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [movie.id, autoPlay]);
+  }, [movie.id, autoPlay, movie.movieDriveId]);
 
   // Tracking: Start/End Views
   useEffect(() => {
@@ -264,18 +270,26 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
   }, [viewMode, movie.id, user]);
 
   return (
-    <div
+    <motion.div
       ref={scrollerRef}
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-4 md:py-8 animate-in fade-in duration-300"
+      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-4 md:py-8"
       onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      <div
-        className="relative w-full max-w-[850px] bg-[#181818] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 my-auto mx-4 transition-transform ease-out"
+      <motion.div
+        className="relative w-full max-w-[850px] bg-[#181818] rounded-xl shadow-2xl overflow-hidden my-auto mx-4"
         onClick={(e) => e.stopPropagation()}
         style={{ transform: `translateY(${touchOffset}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       >
         {/* Drag Handle for Mobile */}
         <div className="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mt-2 mb-1 md:hidden opacity-50" />
@@ -454,10 +468,21 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-[#181818]">
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3 text-lg font-semibold">
-              <span className="text-[#46d369] font-bold">98% Match</span>
-              <span className="text-gray-400">2023</span>
-              <span className="border border-gray-500 px-1 text-xs rounded">HD</span>
+              <span className="text-[#46d369] font-bold">{matchScore}% Match</span>
+              <span className="text-gray-400">{movie.release_date?.substring(0, 4) || '2023'}</span>
+              <span className="border border-gray-500 px-1 text-xs rounded">{movie.quality || 'HD'}</span>
+              {movie.maturityRating && (
+                <span className="border border-gray-500 px-1 text-xs rounded uppercase">{movie.maturityRating}</span>
+              )}
+              {movie.duration && (
+                <span className="text-gray-400 text-sm">{Math.floor(movie.duration / 60)}h {movie.duration % 60}m</span>
+              )}
             </div>
+            {movie.duration && (
+              <div className="text-xs text-gray-500 font-medium">
+                Estimated Data Consumption: <span className="text-gray-300">~{((movie.duration / 60) * 1).toFixed(1)} GB</span>
+              </div>
+            )}
             <p className="text-lg leading-relaxed text-gray-200">
               {movie.overview}
             </p>
@@ -521,7 +546,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, autoPlay = false, 
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

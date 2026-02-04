@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Movie } from '../types';
 import { Modal } from './Modal';
 import { getHeroContent, getSiteSettings } from '../services/contentService';
@@ -50,10 +51,22 @@ export const Hero: React.FC = () => {
     }
   }, [isMuted, videoLoaded, videoQuality]);
 
-  // Start video after 5 second delay
+  // Start video after 5 second delay (only on desktop or if user enabled autoplay)
   const [showVideo, setShowVideo] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    if (movie?.youtubeId) {
+    // Detect mobile device
+    const checkMobile = window.innerWidth < 768;
+    setIsMobile(checkMobile);
+
+    // Check user autoplay preference (default: enabled on desktop, disabled on mobile)
+    const userAutoplayPref = localStorage.getItem('autoplayEnabled');
+    const shouldAutoplay = userAutoplayPref !== null
+      ? userAutoplayPref === 'true'
+      : !checkMobile; // Default to enabled on desktop, disabled on mobile
+
+    if (movie?.youtubeId && shouldAutoplay) {
       const showTimer = setTimeout(() => setShowVideo(true), 5000); // 5 second delay
       const loadTimer = setTimeout(() => setVideoLoaded(true), 7000); // Mark as loaded after 7s
       return () => {
@@ -76,10 +89,17 @@ export const Hero: React.FC = () => {
     <div className="relative h-[85vh] md:h-[56.25vw] md:max-h-[85vh] w-full bg-[#141414] overflow-hidden group">
       {/* Fallback Backdrop Image - Shows when video not loaded */}
       <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${videoLoaded && youtubeEmbedUrl ? 'opacity-0' : 'opacity-100'}`}>
+        {/* Mobile backdrop */}
+        <img
+          src={movie.mobile_backdrop_path || movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
+          alt={movie.title}
+          className="md:hidden w-full h-full object-cover object-center"
+        />
+        {/* Desktop backdrop */}
         <img
           src={movie.backdrop_path || 'https://via.placeholder.com/1920x1080'}
           alt={movie.title}
-          className="w-full h-full object-cover object-center"
+          className="hidden md:block w-full h-full object-cover object-center"
         />
       </div>
 
@@ -118,22 +138,48 @@ export const Hero: React.FC = () => {
         </button>
       )}
 
-      {/* Content */}
-      <div className="absolute top-[15%] md:top-[20%] left-4 md:left-12 max-w-2xl space-y-4 md:space-y-6 z-10 w-full pr-4">
-        <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold drop-shadow-xl text-white tracking-tighter leading-tight">
+      {/* Content - Positioned at bottom to show video above */}
+      <div className="absolute bottom-[15%] md:bottom-[20%] left-4 md:left-12 max-w-2xl space-y-3 md:space-y-4 z-10 w-full pr-4">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="text-3xl md:text-5xl lg:text-6xl font-bold drop-shadow-xl text-white tracking-tighter leading-tight"
+        >
           {movie.title}
-        </h1>
-        <div className="flex items-center gap-3 text-white font-semibold drop-shadow-md text-lg">
+        </motion.h1>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.7 }}
+          className="flex items-center gap-3 text-white font-semibold drop-shadow-md text-lg"
+        >
           <span className="text-[#46d369]">98% Match</span>
           <span className="text-gray-300">{movie.release_date?.substring(0, 4) || '2023'}</span>
           <span className="border border-white/40 px-1 text-xs rounded-sm bg-black/20 uppercase">{movie.type}</span>
-        </div>
-        <p className="text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-full md:w-full font-medium leading-relaxed">
-          {movie.overview}
-        </p>
+          {movie.quality && <span className="border border-white/40 px-1 text-xs rounded-sm bg-black/20 uppercase">{movie.quality}</span>}
+        </motion.div>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 pt-4 w-full md:w-auto">
-          <button
+        {/* Overview - Hidden on mobile, only visible on desktop */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.9 }}
+          className="hidden md:block text-base md:text-lg text-white drop-shadow-md line-clamp-3 text-shadow-md w-full md:w-full font-medium leading-relaxed"
+        >
+          {movie.overview}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.1 }}
+          className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 pt-4 w-full md:w-auto"
+        >
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="w-full md:w-auto flex items-center justify-center gap-2 bg-white text-black px-6 md:px-8 py-3 md:py-3 rounded md:rounded-md font-bold hover:bg-white/80 transition text-lg md:text-xl active:scale-95"
             onClick={() => {
               setAutoPlayModal(true);
@@ -142,8 +188,10 @@ export const Hero: React.FC = () => {
           >
             <Play fill="black" size={24} />
             Play
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="w-full md:w-auto flex items-center justify-center gap-2 bg-[rgba(109,109,110,0.7)] text-white px-6 md:px-8 py-3 md:py-3 rounded md:rounded-md font-bold hover:bg-[rgba(109,109,110,0.4)] transition text-lg md:text-xl active:scale-95"
             onClick={() => {
               setAutoPlayModal(false);
@@ -152,11 +200,13 @@ export const Hero: React.FC = () => {
           >
             <Info size={24} />
             More Info
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
 
-      {showModal && <Modal movie={movie} autoPlay={autoPlayModal} onClose={() => setShowModal(false)} />}
+      <AnimatePresence>
+        {showModal && <Modal movie={movie} autoPlay={autoPlayModal} onClose={() => setShowModal(false)} />}
+      </AnimatePresence>
     </div>
   );
 };

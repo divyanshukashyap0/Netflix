@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Movie, Section } from '../types';
 import { MovieCard } from './MovieCard';
 import { Modal } from './Modal';
@@ -66,21 +67,29 @@ export const Row: React.FC<RowProps> = ({ section, isLarge, movies: initialMovie
           <ChevronLeft className="text-white" size={32} />
         </button>
 
-        <div
+        <motion.div
           ref={rowRef}
           className="flex items-center gap-2 overflow-x-scroll hide-scrollbar scroll-smooth py-6 px-2"
           style={{ scrollBehavior: 'smooth', overflowY: 'visible' }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={{
+            visible: { transition: { staggerChildren: 0.05 } },
+            hidden: {}
+          }}
         >
           {movies.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              isLarge={isLarge}
-              onSelect={(m) => setModalConfig({ movie: m, autoPlay: false })}
-              onPlay={(m) => setModalConfig({ movie: m, autoPlay: true })}
-            />
+            <motion.div key={movie.id} variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}>
+              <MovieCard
+                movie={movie}
+                isLarge={isLarge}
+                onSelect={(m) => setModalConfig({ movie: m, autoPlay: false })}
+                onPlay={(m) => setModalConfig({ movie: m, autoPlay: true })}
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Right Control */}
         <button
@@ -91,14 +100,16 @@ export const Row: React.FC<RowProps> = ({ section, isLarge, movies: initialMovie
         </button>
       </div>
 
-      {modalConfig && (
-        <Modal
-          movie={modalConfig.movie}
-          autoPlay={modalConfig.autoPlay}
-          onClose={() => setModalConfig(null)}
-          onSwitchMovie={(movie) => setModalConfig({ movie, autoPlay: true })}
-        />
-      )}
+      <AnimatePresence>
+        {modalConfig && (
+          <Modal
+            movie={modalConfig.movie}
+            autoPlay={modalConfig.autoPlay}
+            onClose={() => setModalConfig(null)}
+            onSwitchMovie={(movie) => setModalConfig({ movie, autoPlay: true })}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

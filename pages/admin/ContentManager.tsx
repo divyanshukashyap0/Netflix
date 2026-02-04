@@ -57,6 +57,9 @@ export const ContentManager: React.FC = () => {
     try {
       const formattedData = {
         ...data,
+        // Auto-copy backdrop to poster (same image for both)
+        poster_path: data.backdrop_path,
+        mobile_poster_path: data.mobile_backdrop_path || data.backdrop_path,
         genres: typeof data.genres === 'string' ? (data.genres as string).split(',').map((g: string) => g.trim()) : data.genres,
         cast: typeof data.cast === 'string' ? (data.cast as string).split(',').map((c: string) => c.trim()) : data.cast || [],
         tags: typeof data.tags === 'string' ? (data.tags as string).split(',').map((t: string) => t.trim()) : data.tags || [],
@@ -139,6 +142,8 @@ export const ContentManager: React.FC = () => {
     setValue('overview', content.overview);
     setValue('poster_path', content.poster_path);
     setValue('backdrop_path', content.backdrop_path);
+    setValue('mobile_poster_path', content.mobile_poster_path || '');
+    setValue('mobile_backdrop_path', content.mobile_backdrop_path || '');
     setValue('youtubeId', content.youtubeId);
     setValue('type', content.type);
     setValue('genres', content.genres);
@@ -150,6 +155,9 @@ export const ContentManager: React.FC = () => {
     setValue('allowPlayback', content.allowPlayback !== false); // Default to true if undefined
     setValue('vote_average', content.vote_average);
     setValue('release_date', content.release_date);
+    setValue('duration', content.duration);
+    setValue('maturityRating', content.maturityRating);
+    setValue('quality', content.quality);
 
     // Determine which curated sections this content is currently in
     const currentSections = sections.filter(s => s.contentIds?.includes(content.id)).map(s => s.id);
@@ -205,12 +213,14 @@ export const ContentManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Poster URL</label>
-                  <input {...register('poster_path')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="https://..." />
+                  <label className="block text-sm text-gray-400 mb-1">🖥️ PC Thumbnail Link</label>
+                  <input {...register('backdrop_path')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="https://... (used for both poster & backdrop)" />
+                  <p className="text-xs text-gray-500 mt-1">This image will be used everywhere on desktop</p>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Backdrop URL</label>
-                  <input {...register('backdrop_path')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="https://..." />
+                  <label className="block text-sm text-purple-400 mb-1">📱 Smartphone Thumbnail Link</label>
+                  <input {...register('mobile_backdrop_path')} className="w-full bg-[#333] rounded p-2 text-white border border-purple-600/50 focus:border-purple-500 outline-none" placeholder="https://... (leave empty to use PC image)" />
+                  <p className="text-xs text-gray-500 mt-1">Optional - for mobile-optimized image</p>
                 </div>
               </div>
 
@@ -330,6 +340,31 @@ export const ContentManager: React.FC = () => {
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Release Year</label>
                   <input {...register('release_date')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="2023" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Duration (min)</label>
+                  <input type="number" {...register('duration')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 focus:border-white outline-none" placeholder="120" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Maturity Rating</label>
+                  <select {...register('maturityRating')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 outline-none">
+                    <option value="U">U</option>
+                    <option value="U/A 7+">U/A 7+</option>
+                    <option value="U/A 13+">U/A 13+</option>
+                    <option value="U/A 16+">U/A 16+</option>
+                    <option value="A">A</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Quality</label>
+                  <select {...register('quality')} className="w-full bg-[#333] rounded p-2 text-white border border-gray-600 outline-none">
+                    <option value="HD">HD</option>
+                    <option value="4K">4K</option>
+                    <option value="4K+HDR">4K+HDR</option>
+                  </select>
                 </div>
               </div>
 

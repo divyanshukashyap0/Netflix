@@ -36,7 +36,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
 
     return (
         <div
-            className={`relative flex-none transition-all duration-300 ${isLarge ? 'w-[160px] md:w-[200px] h-[240px] md:h-[300px]' : 'w-[200px] md:w-[240px] h-[110px] md:h-[135px]'}`}
+            className={`relative flex-none transition-all duration-300 ${isLarge ? 'w-[160px] md:w-[200px] h-[280px] md:h-[340px]' : 'w-[200px] md:w-[240px] h-[140px] md:h-[165px]'}`}
             onMouseEnter={() => {
                 if (window.innerWidth >= 768) setIsHovered(true);
             }}
@@ -62,8 +62,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                 <div className="relative w-full aspect-video cursor-pointer" onClick={() => onSelect(movie)}>
                     {isHovered && movie.youtubeId ? (
                         <iframe
-                            src={`https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${movie.youtubeId}`}
-                            className="w-full h-full object-cover rounded-t-md"
+                            src={`https://www.youtube.com/embed/${movie.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&modestbranding=1&iv_load_policy=3&playlist=${movie.youtubeId}`}
+                            className="w-full h-full object-cover rounded-t-md scale-[1.35] pointer-events-none"
                             allow="autoplay; encrypted-media"
                             frameBorder="0"
                             title={movie.title}
@@ -83,6 +83,11 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isLarge, onSelect, 
                             </div>
                         )
                     )}
+                </div>
+
+                {/* Movie Title - Always Visible */}
+                <div className="px-2 py-2 bg-[#181818]">
+                    <p className="text-white text-xs font-medium truncate">{movie.title}</p>
                 </div>
 
                 {/* Expanded Info (Only visible on hoverDesktop) */}

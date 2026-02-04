@@ -238,6 +238,8 @@ class DownloadManager {
                 item.status = 'completed';
                 clearInterval(this.intervals[movieId]);
 
+                analyticsService.logDownload('current-user', item.movie.id);
+
                 analyticsService.logEvent({
                     type: 'download_complete',
                     movieId: item.movie.id,

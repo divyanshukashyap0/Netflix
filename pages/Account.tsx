@@ -473,6 +473,23 @@ export const Account: React.FC = () => {
                                 </button>
                             </div>
 
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-bold text-gray-200">Autoplay Previews</h3>
+                                    <p className="text-sm text-gray-500">Automatically play video previews while browsing. Disabled on mobile by default.</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const current = localStorage.getItem('autoplayEnabled') !== 'false';
+                                        localStorage.setItem('autoplayEnabled', String(!current));
+                                        window.location.reload();
+                                    }}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${localStorage.getItem('autoplayEnabled') !== 'false' ? 'bg-blue-600' : 'bg-gray-400'}`}
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${localStorage.getItem('autoplayEnabled') !== 'false' ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
                             <p className="text-[#0073e6] hover:text-[#005bb5] hover:underline text-sm cursor-pointer transition" onClick={() => { logout(); window.location.hash = AppRoute.LANDING; }}>
                                 Sign out of all devices
                             </p>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useStore } from '../context/Store';
 import { X, Download, Share } from 'lucide-react';
 
 export const PWAInstall: React.FC = () => {
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const { isPWAInstallable, isPWAStandalone, installPWA } = useStore();
     const [isVisible, setIsVisible] = useState(false);
     const [isIOS, setIsIOS] = useState(false);
 
@@ -11,37 +12,24 @@ export const PWAInstall: React.FC = () => {
         const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
         setIsIOS(isIosDevice);
 
-        // Check if already in standalone mode
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-        if (isStandalone) return;
+        if (isPWAStandalone) return;
 
-        // Android / Desktop Install Prompt
-        const handleBeforeInstallPrompt = (e: any) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-            // Show prompt after a small delay to not annoy user immediately
-            setTimeout(() => setIsVisible(true), 3000);
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        // Show prompt after a small delay if installable
+        if (isPWAInstallable) {
+            const timer = setTimeout(() => setIsVisible(true), 3000);
+            return () => clearTimeout(timer);
+        }
 
         // iOS Prompt Logic - show once per session if not installed
-        if (isIosDevice && !localStorage.getItem('iosInstallPromptSeen')) {
-            setTimeout(() => setIsVisible(true), 3000);
+        if (isIosDevice && !localStorage.getItem('iosInstallPromptSeen') && !isPWAStandalone) {
+            const timer = setTimeout(() => setIsVisible(true), 3000);
+            return () => clearTimeout(timer);
         }
-
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    }, []);
+    }, [isPWAInstallable, isPWAStandalone]);
 
     const handleInstallClick = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                setDeferredPrompt(null);
-                setIsVisible(false);
-            }
-        }
+        await installPWA();
+        setIsVisible(false);
     };
 
     const handleDismiss = () => {
@@ -49,7 +37,7 @@ export const PWAInstall: React.FC = () => {
         if (isIOS) localStorage.setItem('iosInstallPromptSeen', 'true');
     };
 
-    if (!isVisible) return null;
+    if (!isVisible || isPWAStandalone) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-6 md:hidden animate-slide-up">

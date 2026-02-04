@@ -2,6 +2,8 @@ import React from 'react';
 import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import { AppRoute } from '../types';
 
+import { RequestContent } from './RequestContent';
+
 export const Footer: React.FC = () => {
     const navigate = (route: AppRoute) => {
         window.location.hash = route;
@@ -11,6 +13,8 @@ export const Footer: React.FC = () => {
     return (
         <footer className="bg-[#141414] text-gray-400 py-12 px-4 md:px-12 mt-12 border-t border-gray-800">
             <div className="max-w-5xl mx-auto">
+                <RequestContent />
+
                 <div className="flex gap-6 mb-8 text-white">
                     <Facebook className="w-6 h-6 cursor-pointer hover:text-gray-200" />
                     <Instagram className="w-6 h-6 cursor-pointer hover:text-gray-200" />

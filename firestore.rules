@@ -65,5 +65,20 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read: if isAdmin();
     }
+
+    // Content Requests Rules
+    match /content_requests/{requestId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Notifications Rules
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow write, update: if isAdmin();
+      // Note: If users can mark global notifications as read (as in current Layout.tsx), 
+      // they would need update permission here, but that would affect all users.
+      // Keeping it admin-only for safety since it's a global feed.
+    }
   }
 }

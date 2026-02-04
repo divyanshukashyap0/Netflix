@@ -17,12 +17,15 @@ interface StoreContextType {
   loginWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => void;
-  myList: number[];
+  myList: string[];
   addToMyList: (movie: Movie) => void;
   removeFromMyList: (movieId: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   addProfile: (name: string, isKids: boolean, avatarUrl?: string) => Promise<void>;
+  isPWAInstallable: boolean;
+  isPWAStandalone: boolean;
+  installPWA: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -34,6 +37,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 Minutes
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const checkStandalone = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      setIsStandalone(!!standalone);
+    };
+    checkStandalone();
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const installPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    }
+  };
 
   // Auto Logout on Inactivity
   useEffect(() => {
@@ -62,10 +97,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (timeoutId) clearTimeout(timeoutId);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
-    };
   }, [user]);
 
   // Heartbeat for Analytics
@@ -89,11 +120,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         let userPlan = 'Free';
         let subscriptionStatus: 'active' | 'inactive' | 'canceled' = 'inactive';
 
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          if (data.role) dbRole = data.role as 'user' | 'admin';
-          if (data.plan) userPlan = data.plan;
-          if (data.subscriptionStatus) subscriptionStatus = data.subscriptionStatus;
+        const userData = userSnap.exists() ? userSnap.data() : null;
+        if (userData) {
+          if (userData.role) dbRole = userData.role as 'user' | 'admin';
+          if (userData.plan) userPlan = userData.plan;
+          if (userData.subscriptionStatus) subscriptionStatus = userData.subscriptionStatus;
         } else {
           // Fallback for new users or if not found
           dbRole = (firebaseUser.email?.includes('admin')) ? 'admin' : 'user';
@@ -110,7 +141,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setUser(mappedUser as any);
 
         // Security Check: Blocked User
-        if (dbRole === 'user' && (data?.status === 'blocked')) {
+        if (dbRole === 'user' && (userData?.status === 'blocked')) {
           await signOut(auth);
           alert("Your account has been restricted. Please contact support.");
           setUser(null);
@@ -307,8 +338,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       removeFromMyList,
       searchQuery,
       setSearchQuery,
-      addProfile
-      , resetPassword
+      addProfile,
+      resetPassword,
+      isPWAInstallable: isInstallable,
+      isPWAStandalone: isStandalone,
+      installPWA
     }}>
       {children}
     </StoreContext.Provider>

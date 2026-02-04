@@ -67,5 +67,16 @@ export const analyticsService = {
         } catch (e) {
             console.error("Error logging download:", e);
         }
+    },
+    // Heartbeat Tracking (Presence)
+    updateHeartbeat: async (userId: string) => {
+        try {
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
+                lastActive: new Date().toISOString()
+            });
+        } catch (e) {
+            // Silently fail for heartbeat to not spam console
+        }
     }
 };

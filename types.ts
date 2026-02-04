@@ -183,6 +183,15 @@ export enum AppRoute {
   GIFT_CARDS = '/gift-cards'
 }
 
+export interface ContentRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  contentTitle: string;
+  status: 'pending' | 'resolved' | 'failed';
+  createdAt: string;
+}
+
 export interface TMDBResponse {
   results: Movie[];
 }

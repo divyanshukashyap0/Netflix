@@ -19,7 +19,7 @@ const AVATARS = [
 ];
 
 export const Account: React.FC = () => {
-    const { user, profiles, logout, currentProfile } = useStore();
+    const { user, profiles, logout, currentProfile, isPWAInstallable, installPWA } = useStore();
     const { isDataSaver, toggleDataSaver } = useDataSaver();
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [isEditingPhone, setIsEditingPhone] = useState(false);
@@ -489,6 +489,22 @@ export const Account: React.FC = () => {
                                     <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${localStorage.getItem('autoplayEnabled') !== 'false' ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </button>
                             </div>
+
+                            {/* PWA Install Option - Only show on mobile if installable */}
+                            {isPWAInstallable && (
+                                <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-lg border border-zinc-700 md:hidden">
+                                    <div>
+                                        <h3 className="font-bold text-gray-200">Download App</h3>
+                                        <p className="text-sm text-gray-500">Install the Netflix Premium app for a better experience, offline viewing, and faster access.</p>
+                                    </div>
+                                    <button
+                                        onClick={installPWA}
+                                        className="bg-white text-black px-4 py-2 rounded font-bold text-sm hover:bg-gray-200 transition"
+                                    >
+                                        Install
+                                    </button>
+                                </div>
+                            )}
 
                             <p className="text-[#0073e6] hover:text-[#005bb5] hover:underline text-sm cursor-pointer transition" onClick={() => { logout(); window.location.hash = AppRoute.LANDING; }}>
                                 Sign out of all devices

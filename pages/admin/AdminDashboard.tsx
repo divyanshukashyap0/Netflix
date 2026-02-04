@@ -6,13 +6,15 @@ import { Users, Film, PlayCircle, HardDrive, Layers, BarChart2 } from 'lucide-re
 import { AppRoute } from '../../types';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { UserManager } from './UserManager';
+import { RequestManager } from './RequestManager';
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'users' | 'requests'>('overview');
   const [stats, setStats] = useState({
     users: 0,
     content: 0,
-    sections: 0
+    sections: 0,
+    requests: 0
   });
 
   useEffect(() => {
@@ -21,11 +23,13 @@ export const AdminDashboard: React.FC = () => {
         const usersSnap = await getCountFromServer(collection(db, 'users'));
         const contentSnap = await getCountFromServer(collection(db, 'content'));
         const sectionsSnap = await getCountFromServer(collection(db, 'sections'));
+        const requestsSnap = await getCountFromServer(collection(db, 'content_requests'));
 
         setStats({
           users: usersSnap.data().count,
           content: contentSnap.data().count,
-          sections: sectionsSnap.data().count
+          sections: sectionsSnap.data().count,
+          requests: requestsSnap.data().count
         });
       } catch (e) {
         console.error("Failed to fetch stats (DB might be empty)", e);
@@ -37,8 +41,8 @@ export const AdminDashboard: React.FC = () => {
   const cards = [
     { label: 'Total Users', value: stats.users, icon: Users, color: 'bg-blue-600' },
     { label: 'Total Content', value: stats.content, icon: Film, color: 'bg-[#e50914]' },
+    { label: 'Pending Requests', value: stats.requests, icon: PlayCircle, color: 'bg-yellow-600' },
     { label: 'Active Sections', value: stats.sections, icon: Layers, color: 'bg-purple-600' },
-    { label: 'Server Status', value: 'Online', icon: HardDrive, color: 'bg-green-600' },
   ];
 
   return (
@@ -57,6 +61,12 @@ export const AdminDashboard: React.FC = () => {
           Analytics
         </button>
         <button
+          onClick={() => setActiveTab('requests')}
+          className={`px-4 py-2 rounded-lg font-bold transition ${activeTab === 'requests' ? 'bg-[#e50914] text-white' : 'text-gray-400 hover:text-white'}`}
+        >
+          Content Requests
+        </button>
+        <button
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2 rounded-lg font-bold transition ${activeTab === 'users' ? 'bg-[#e50914] text-white' : 'text-gray-400 hover:text-white'}`}
         >
@@ -68,7 +78,11 @@ export const AdminDashboard: React.FC = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {cards.map((card) => (
-              <div key={card.label} className="bg-[#1f1f1f] p-6 rounded-xl border border-gray-800 shadow-lg">
+              <div
+                key={card.label}
+                className="bg-[#1f1f1f] p-6 rounded-xl border border-gray-800 shadow-lg cursor-pointer hover:bg-zinc-800 transition"
+                onClick={() => card.label === 'Pending Requests' && setActiveTab('requests')}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-3 rounded-lg ${card.color} bg-opacity-20`}>
                     <card.icon className={`${card.color.replace('bg-', 'text-')}`} size={24} />
@@ -93,10 +107,11 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="bg-[#1f1f1f] rounded-xl border border-gray-800 p-6 mt-6">
             <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <button onClick={() => window.location.hash = AppRoute.ADMIN_CONTENT} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white">Manage Content</button>
               <button onClick={() => window.location.hash = AppRoute.ADMIN_COMING_SOON} className="px-4 py-2 bg-[#e50914] hover:bg-red-700 rounded text-sm text-white font-bold">Manage Coming Soon</button>
               <button onClick={() => window.location.hash = AppRoute.ADMIN_SECTIONS} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white">Edit Sections</button>
+              <button onClick={() => setActiveTab('requests')} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded text-sm text-white font-bold">View User Requests</button>
             </div>
           </div>
         </>
@@ -104,6 +119,7 @@ export const AdminDashboard: React.FC = () => {
 
       {activeTab === 'analytics' && <AnalyticsOverview />}
       {activeTab === 'users' && <UserManager />}
+      {activeTab === 'requests' && <RequestManager />}
 
     </AdminLayout>
   );
